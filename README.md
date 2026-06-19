@@ -183,6 +183,7 @@ python3 audit.py --badge badge.svg          # write a shareable SVG grade badge
 python3 audit.py --html report.html         # standalone HTML report (private — owner view)
 python3 audit.py --verify-self               # SHA-256 of ClawCheck's own source (anti-tamper)
 python3 audit.py --prompts                   # a copy-paste "ask your agent to fix it" per finding
+python3 audit.py --lang he                   # Hebrew report (right-to-left); default auto-detects locale
 ```
 
 - **`--vet PATH`** runs the B13 malware scan on a skill *before* you install it (point it at a
@@ -216,12 +217,13 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Status
 
-Prototype (v0.8). Read-only checks A1/B1–B25/C3–C5 (incl. write-protection, self-modification,
+v0.9. Read-only checks A1/B1–B25/C3–C5 (incl. write-protection, self-modification,
 approval-bypass, deep MCP, update/pinning hygiene), installed-skill malware vetting, baseline
 suppression + governance, the built-in `openclaw security audit` merged in, active injection
 tests (`--canary`/`--redteam`), a runtime dry-run harness (`--dryrun`), HTML report,
-self-integrity (`--verify-self`), and a pip/pipx-installable CLI — hardened per an external
-security review. History/trend, bilingual output, and percentile are on the roadmap.
+self-integrity (`--verify-self`), a pip/pipx-installable CLI — hardened per an external
+security review — and **bilingual output** (`--lang he` for Hebrew + RTL, auto-detected from
+locale). History/trend and percentile are on the roadmap.
 
 ## Tests
 

@@ -3,6 +3,16 @@
 All notable changes to ClawCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.9.0] — 2026-06-19
+
+### Added
+- **Bilingual output (`--lang en|he`).** Hebrew report chrome (headings, labels, section titles),
+  all check titles translated to Hebrew, and a right-to-left HTML report (`<html dir="rtl">`,
+  `lang="he"`, `body{text-align:right}`) when `--lang he` is passed. Auto-detects Hebrew from the
+  `LANG`/`LC_ALL` locale so users in a Hebrew locale get it without any extra flag. Finding
+  "why"/detail text stays English in this version — full detail translation is planned. English
+  output is byte-identical to v0.8.0; the `--lang en` default changes nothing.
+
 ## [0.8.0] — 2026-06-19
 
 ### Added

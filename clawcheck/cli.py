@@ -8,6 +8,7 @@ Read-only. No network. No writes by default. Pure stdlib. Cross-platform.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -21,6 +22,15 @@ from .report import render_html
 from .monitor import DEFAULT_STATE
 from .redteam import make_suite, render_suite
 from .dryrun import make_scenarios, render_dryrun
+
+
+def _default_lang() -> str:
+    """Infer output language from the environment (LC_ALL then LANG)."""
+    for var in ("LC_ALL", "LANG"):
+        val = os.environ.get(var, "")
+        if val.startswith("he"):
+            return "he"
+    return "en"
 
 
 def _unicode_ok() -> bool:
@@ -73,6 +83,8 @@ def main(argv=None) -> int:
                    help="list suppressed finding ids + fingerprints and exit")
     p.add_argument("--verify-self", action="store_true",
                    help="print the SHA-256 digest of the ClawCheck engine source for tamper detection")
+    p.add_argument("--lang", choices=("en", "he"), default=_default_lang(),
+                   help="output language (en|he; he is right-to-left)")
     args = p.parse_args(argv)
 
     ascii_only = args.ascii or not _unicode_ok()
@@ -141,20 +153,23 @@ def main(argv=None) -> int:
 
     if args.html:
         try:
-            Path(args.html).expanduser().write_text(render_html(findings, score, native=ctx.native), encoding="utf-8")
+            Path(args.html).expanduser().write_text(
+                render_html(findings, score, native=ctx.native, lang=args.lang),
+                encoding="utf-8")
             _emit(f"(HTML report written to {args.html})")
         except OSError as exc:
             _emit(f"(could not write HTML report: {exc})")
         return 0
 
     if args.prompts:
-        _emit(render_prompts(findings, ascii_only))
+        _emit(render_prompts(findings, ascii_only, lang=args.lang))
         return 0
 
     if args.monitor:
         prev = load_state(args.state)
         snap = snapshot(ctx, findings, score)
-        _emit(render_monitor(diff(prev, snap), score, ascii_only, baseline=prev is None))
+        _emit(render_monitor(diff(prev, snap), score, ascii_only, baseline=prev is None,
+                             lang=args.lang))
         try:
             save_state(args.state, snap)
         except OSError as exc:
@@ -164,10 +179,10 @@ def main(argv=None) -> int:
     if args.json:
         body = render_json(findings, score)
     elif args.card:
-        body = render_card(score, findings, ascii_only)
+        body = render_card(score, findings, ascii_only, lang=args.lang)
     else:
-        parts = [render_report(findings, score, ascii_only, native=ctx.native),
-                 "", render_card(score, findings, ascii_only)]
+        parts = [render_report(findings, score, ascii_only, native=ctx.native, lang=args.lang),
+                 "", render_card(score, findings, ascii_only, lang=args.lang)]
         if ctx.errors:
             parts.append("\nnotes:\n" + "\n".join(f"  - {e}" for e in ctx.errors))
         body = "\n".join(parts)

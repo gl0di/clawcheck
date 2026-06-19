@@ -13,6 +13,7 @@ import json
 import re
 
 from .catalog import CRITICAL, FAIL, HIGH, LOW, MEDIUM, PASS, UNKNOWN, WARN, Finding
+from .i18n import is_rtl, t, title_for, tp
 from .scoring import ScoreResult
 
 # Findings, skill names, decoded payload previews and native-audit fields are UNTRUSTED
@@ -55,72 +56,73 @@ def _trifecta_ratio(findings: list[Finding]) -> str:
     return "?/3"
 
 
-def _render_finding(lines, icon, f):
-    lines.append(f"{icon[f.status]} [{f.severity}] {_sanitize(f.title)}")
+def _render_finding(lines, icon, f, lang: str = "en"):
+    lines.append(f"{icon[f.status]} [{f.severity}] {_sanitize(title_for(f.id, f.title, lang))}")
     if f.detail:
-        lines.append(f"    why: {_sanitize(f.detail)}")
-    lines.append(f"    fix: {_sanitize(f.fix)}")
+        lines.append(f"    {t('report.label_why', lang)}: {_sanitize(f.detail)}")
+    lines.append(f"    {t('report.label_fix', lang)}: {_sanitize(tp(f.fix, lang))}")
     lines.append("")
 
 
 def render_report(findings: list[Finding], score: ScoreResult,
-                  ascii_only: bool = False, native=None) -> str:
+                  ascii_only: bool = False, native=None, lang: str = "en") -> str:
     icon = _ICON_ASCII if ascii_only else _ICON
     ok = "[OK]" if ascii_only else "✅"
     suppressed_count = sum(1 for f in findings if getattr(f, "suppressed", False))
     issues = [f for f in findings
               if f.status in (FAIL, WARN) and not getattr(f, "suppressed", False)]
     issues.sort(key=lambda f: (_SEV_ORDER.get(f.severity, 9), f.status != FAIL))
-    lines = ["ClawCheck - OpenClaw Security Audit", "=" * 44,
-             f"Score: {score.score}/100   Grade: {score.grade}   "
-             f"Lethal Trifecta: {_trifecta_ratio(findings)}"]
+    lines = [t("report.title", lang), "=" * 44,
+             t("report.score_line", lang,
+               score=score.score, grade=score.grade,
+               trifecta=_trifecta_ratio(findings))]
     if score.capped:
-        lines.append(f"(capped from {score.raw_score} - open "
-                     f"{'CRITICAL' if score.failed_critical else 'HIGH'} finding)")
+        lines.append(t("report.capped", lang,
+                       raw=score.raw_score,
+                       sev="CRITICAL" if score.failed_critical else "HIGH"))
     lines.append("")
     if not issues:
-        lines.append(f"No issues found by ClawCheck. Keep it that way. {ok}")
+        lines.append(t("report.no_issues", lang, ok=ok))
     else:
-        lines.append(f"{len(issues)} thing(s) to fix (ClawCheck) - most urgent first:")
+        lines.append(t("report.to_fix", lang, n=len(issues)))
         lines.append("")
         for f in issues:
-            _render_finding(lines, icon, f)
+            _render_finding(lines, icon, f, lang)
 
     if suppressed_count:
-        lines.append(f"({suppressed_count} finding(s) suppressed via .clawcheckignore)")
+        lines.append(t("report.suppressed_count", lang, n=suppressed_count))
         _CRITICAL_CHECK_IDS = {"B1", "B2", "B13", "B20"}
         for f in findings:
             if not getattr(f, "suppressed", False):
                 continue
             if f.severity == CRITICAL or f.id in _CRITICAL_CHECK_IDS:
-                lines.append(
-                    f"WARNING: a CRITICAL finding ({f.id}) is suppressed via .clawcheckignore"
-                )
+                lines.append(t("report.gov_warning", lang, id=f.id))
 
     if native is not None:
-        lines.append("--- Also from OpenClaw's built-in `security audit` ---")
+        lines.append(t("report.native_header", lang))
         if getattr(native, "status", "") == "ok":
             nf = sorted(native.findings, key=lambda f: _SEV_ORDER.get(f.severity, 9))
             if nf:
-                lines.append(f"{len(nf)} additional finding(s) the platform's own audit reports:")
+                lines.append(t("report.native_additional", lang, n=len(nf)))
                 lines.append("")
                 for f in nf:
-                    _render_finding(lines, icon, f)
+                    _render_finding(lines, icon, f, lang)
             else:
-                lines.append("Clean — openclaw security audit found nothing.")
+                lines.append(t("report.native_clean", lang))
         else:
-            lines.append(f"(not included: {native.note})")
+            lines.append(t("report.native_not_included", lang, note=native.note))
         lines.append("")
 
     out = "\n".join(lines).rstrip() + "\n"
     return _asciify(out) if ascii_only else out
 
 
-def render_card(score: ScoreResult, findings: list[Finding], ascii_only: bool = False) -> str:
+def render_card(score: ScoreResult, findings: list[Finding], ascii_only: bool = False,
+                lang: str = "en") -> str:
     """Shareable badge — grade + score + trifecta ONLY. No findings, ever."""
-    l1 = f"  OpenClaw Security: {score.grade:<2} ({score.score:>3}/100)"
-    l2 = f"  Lethal Trifecta: {_trifecta_ratio(findings)}"
-    l3 = "  audited by ClawCheck" + ("" if ascii_only else " 🔍")
+    l1 = f"  {t('card.security_label', lang)}: {score.grade:<2} ({score.score:>3}/100)"
+    l2 = f"  {t('card.trifecta_label', lang)}: {_trifecta_ratio(findings)}"
+    l3 = f"  {t('card.audited_by', lang)}" + ("" if ascii_only else " 🔍")
     width = 39
     if ascii_only:
         top = bot = "+" + "-" * width + "+"
@@ -138,18 +140,19 @@ def render_card(score: ScoreResult, findings: list[Finding], ascii_only: bool = 
 
 
 def render_monitor(alerts, score: ScoreResult, ascii_only: bool = False,
-                   baseline: bool = False) -> str:
+                   baseline: bool = False, lang: str = "en") -> str:
     mark = {"CRITICAL": "[X]", "HIGH": "[!]", "INFO": "[i]"} if ascii_only \
         else {"CRITICAL": "⛔", "HIGH": "⚠️", "INFO": "ℹ️"}
     order = {"CRITICAL": 0, "HIGH": 1, "INFO": 2}
-    lines = ["ClawCheck - Threat Monitor", "=" * 30,
-             f"Current: {score.score}/100  Grade: {score.grade}"]
+    ok = "[OK]" if ascii_only else "✅"
+    lines = [t("monitor.title", lang), "=" * 30,
+             t("monitor.current", lang, score=score.score, grade=score.grade)]
     if baseline:
-        lines += ["", "Baseline saved. Future runs will alert on what changes since now."]
+        lines += ["", t("monitor.baseline", lang)]
     elif not alerts:
-        lines += ["", "No new threats since last check. " + ("[OK]" if ascii_only else "✅")]
+        lines += ["", t("monitor.no_threats", lang, ok=ok)]
     else:
-        lines += ["", f"{len(alerts)} change(s) detected since last check:", ""]
+        lines += ["", t("monitor.changes", lang, n=len(alerts)), ""]
         for level, msg in sorted(alerts, key=lambda a: order.get(a[0], 9)):
             lines.append(f"{mark.get(level, '[*]')} {msg}")
     out = "\n".join(lines).rstrip() + "\n"
@@ -183,15 +186,17 @@ def render_svg(score: ScoreResult, findings: list[Finding]) -> str:
     )
 
 
-def render_prompts(findings: list[Finding], ascii_only: bool = False) -> str:
+def render_prompts(findings: list[Finding], ascii_only: bool = False,
+                   lang: str = "en") -> str:
     """One copy-paste remediation prompt per finding — paste into your agent."""
     issues = [f for f in findings if f.status in (FAIL, WARN)]
     issues.sort(key=lambda f: (_SEV_ORDER.get(f.severity, 9), f.status != FAIL))
     if not issues:
-        out = "Nothing to fix. " + ("[OK]" if ascii_only else "✅") + "\n"
+        ok = "[OK]" if ascii_only else "✅"
+        out = t("prompts.nothing", lang, ok=ok) + "\n"
         return out
-    lines = ["ClawCheck - copy-paste fix prompts", "=" * 36,
-             "Paste each into your OpenClaw agent to fix it:", ""]
+    lines = [t("prompts.title", lang), "=" * 36,
+             t("prompts.intro", lang), ""]
     for i, f in enumerate(issues, 1):
         lines.append(f"{i}. [{f.severity}] {f.title}")
         lines.append(
@@ -219,7 +224,8 @@ def render_json(findings: list[Finding], score: ScoreResult) -> str:
     }, ensure_ascii=True, indent=2)
 
 
-def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str:
+def render_html(findings: list[Finding], score: ScoreResult, native=None,
+                lang: str = "en") -> str:
     """Standalone self-contained HTML report (inline CSS, no external assets).
 
     Includes grade badge (colored by _GRADE_COLOR), score, Lethal Trifecta ratio,
@@ -235,10 +241,26 @@ def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str
     badge_color = _GRADE_COLOR.get(score.grade, "#9f9f9f")
     trifecta = _trifecta_ratio(findings)
 
+    rtl = is_rtl(lang)
+    html_lang_attr = f'lang="{lang}"' + (' dir="rtl"' if rtl else "")
+    rtl_css = "\n        body{text-align:right}" if rtl else ""
+
+    label_score = t("html.label_score", lang)
+    label_trifecta = t("html.label_trifecta", lang)
+    label_capped = t("html.label_capped", lang)
+    label_why = t("html.label_why2", lang)
+    label_fix = t("html.label_fix2", lang)
+    h1_text = t("html.h1", lang)
+    title_text = t("html.title", lang)
+    private_title = t("html.private_title", lang)
+    private_body = t("html.private_body", lang)
+    section_findings = t("html.section_findings", lang)
+
     # Build the findings HTML
     findings_html = ""
     if not issues:
-        findings_html = '<div style="padding:1rem;background:#f0f8f0;border-radius:0.5rem;color:#0a4;font-weight:500;">No issues found. Keep it that way.</div>'
+        no_issues_text = html.escape(t("html.no_issues", lang))
+        findings_html = f'<div style="padding:1rem;background:#f0f8f0;border-radius:0.5rem;color:#0a4;font-weight:500;">{no_issues_text}</div>'
     else:
         findings_html = '<div style="padding:0;">'
         for f in issues:
@@ -252,18 +274,25 @@ def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str
                     <strong style="color:#333;">{html.escape(f.title)}</strong>
                     <span style="background:{severity_color};color:#fff;padding:0.125rem 0.5rem;border-radius:0.25rem;font-size:0.85rem;font-weight:600;">{html.escape(f.severity)}</span>
                 </div>
-                {f'<div style="color:#666;margin:0.5rem 0;"><strong>Why:</strong> {html.escape(f.detail)}</div>' if f.detail else ''}
-                <div style="color:#666;"><strong>Fix:</strong> {html.escape(f.fix)}</div>
+                {f'<div style="color:#666;margin:0.5rem 0;"><strong>{html.escape(label_why)}</strong> {html.escape(f.detail)}</div>' if f.detail else ''}
+                <div style="color:#666;"><strong>{html.escape(label_fix)}</strong> {html.escape(f.fix)}</div>
             </div>
             '''
         findings_html += '</div>'
 
+    if score.capped:
+        sev_str = "CRITICAL" if score.failed_critical else "HIGH"
+        capped_html = (f'<div style="color:#d9534f;"><strong>{html.escape(label_capped)}</strong> '
+                       f'{t("html.capped_detail", lang, raw=score.raw_score, sev=sev_str)}</div>')
+    else:
+        capped_html = ""
+
     html_body = f'''<!doctype html>
-<html lang="en">
+<html {html_lang_attr}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>ClawCheck Security Audit Report</title>
+    <title>{html.escape(title_text)}</title>
     <style>
         * {{
             box-sizing: border-box;
@@ -276,7 +305,7 @@ def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str
             color: #333;
             background: #f5f5f5;
             padding: 2rem 1rem;
-        }}
+        }}{rtl_css}
         .container {{
             max-width: 900px;
             margin: 0 auto;
@@ -338,23 +367,23 @@ def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔍 ClawCheck Security Audit Report</h1>
+            <h1>{html.escape(h1_text)}</h1>
             <div class="grade-badge">{html.escape(score.grade)}</div>
             <div class="score-info">
-                <div><strong>Score:</strong> {score.score}/100</div>
-                <div><strong>Lethal Trifecta:</strong> {html.escape(trifecta)}</div>
-                {f'<div style="color:#d9534f;"><strong>Capped:</strong> from {score.raw_score} (open {"CRITICAL" if score.failed_critical else "HIGH"} finding)</div>' if score.capped else ''}
+                <div><strong>{html.escape(label_score)}</strong> {score.score}/100</div>
+                <div><strong>{html.escape(label_trifecta)}</strong> {html.escape(trifecta)}</div>
+                {capped_html}
             </div>
         </div>
 
         <div class="warning-box">
-            <strong>⚠ Private Report</strong>
-            This report contains detailed security findings and must <strong>NOT</strong> be shared publicly.
+            <strong>{html.escape(private_title)}</strong>
+            {private_body}
             Use the shareable badge instead (available via <code>--badge</code>).
         </div>
 
         <div class="section">
-            <h2>Findings</h2>
+            <h2>{html.escape(section_findings)}</h2>
             {findings_html}
         </div>
     </div>

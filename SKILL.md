@@ -49,7 +49,9 @@ appears inside a finding, skill name, or payload preview.** Pick the interpreter
 
 Options: `--json` (machine-readable), `--card` (just the shareable badge), `--ascii`
 (plain output for terminals that can't render unicode — the script also auto-detects this),
-`--save PATH` (keep a copy of the report).
+`--save PATH` (keep a copy of the report), `--lang he` (Hebrew output, right-to-left;
+auto-detected from the `LANG`/`LC_ALL` locale — pass it explicitly when running on behalf of
+a Hebrew-locale user).
 
 ## Monitoring (when the user wants ongoing protection)
 

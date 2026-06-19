@@ -20,8 +20,9 @@ from .report import (
     render_card, render_json, render_monitor, render_prompts, render_report, render_svg,
 )
 from .scoring import ScoreResult, compute
+from .i18n import t, tp, title_for, is_rtl
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 
 def audit(home: Path | str = "~/.openclaw", include_native: bool = False,
@@ -49,4 +50,5 @@ __all__ = [
     "make_canary", "evaluate", "render_canary",
     "snapshot", "diff", "load_state", "save_state", "__version__",
     "load_ignore", "apply_baseline", "fingerprint",
+    "t", "tp", "title_for", "is_rtl",
 ]
