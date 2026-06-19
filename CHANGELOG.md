@@ -3,6 +3,22 @@
 All notable changes to ClawCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.7.0] — 2026-06-19
+
+### Added (agent-behavior checks, from the external review)
+- **B20 — Bootstrap/memory write protection.** Flags group/world-writable `SOUL.md`/`AGENTS.md`/
+  `TOOLS.md` (or their parent dirs) — anyone who can rewrite them owns the agent's identity. POSIX.
+- **B21 — Tool-output trust boundary.** Whether the bootstrap tells the agent that tool output /
+  web / email / MCP responses are *data, not instructions*.
+- **B22 — Self-modification risk.** Flags when the agent can rewrite its own identity/skills/config
+  (write access + exec/fs_write) without human approval.
+- **B23 — Approval-bypass directives.** Catches bootstrap language that weakens approval
+  ("do not ask confirmation", "assume approved", "auto-approve", …).
+- **B24 — MCP server hardening.** Deepens B15: flags `npx@latest`/unpinned stdio MCP, `env: "*"`
+  / broad-secret passthrough, token passthrough, and SSRF/metadata-IP reach.
+- **Expanded B13 signatures.** URL-safe base64, PowerShell `-EncodedCommand` (UTF-16LE),
+  Discord/Telegram webhook exfil, more credential paths, and a same-skill credential+exfil rule.
+
 ## [0.6.0] — 2026-06-19
 
 ### Added

@@ -56,6 +56,8 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
 - **B17 — autonomy / heartbeat:** whether the agent acts on its own and could be steered by untrusted input.
 - **B18 — subagent delegation:** whether spawned subagents can wield elevated/exec tools without approval.
 - **B19 — data at-rest:** group/world-readable memory/log directories (conversation data / PII exposure).
+- **B20–B24 — agent behavior:** write-protection of identity/memory files, tool-output trust boundary,
+  self-modification risk, approval-bypass directives, and deep MCP-server hardening.
 - Plus your platform's own **`openclaw security audit`**, run for you and merged in.
 
 ## Built-in audit, included for you
@@ -212,11 +214,11 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Status
 
-Prototype (v0.6). Passive, read-only checks (B1–B19, C3/C4), installed-skill malware vetting,
-baseline suppression, the built-in `openclaw security audit` merged in, active injection tests
-(`--canary`/`--redteam`), HTML report, and a pip/pipx-installable CLI — hardened per an external
-security review. Deeper agent-behavior checks (write-protection, self-modification, deep MCP),
-history/trend, bilingual output, and percentile are on the roadmap.
+Prototype (v0.7). Read-only checks A1/B1–B24/C3/C4 (incl. write-protection, self-modification,
+approval-bypass, deep MCP), installed-skill malware vetting, baseline suppression, the built-in
+`openclaw security audit` merged in, active injection tests (`--canary`/`--redteam`), HTML report,
+and a pip/pipx-installable CLI — hardened per an external security review. A runtime dry-run
+harness, history/trend, bilingual output, and percentile are on the roadmap.
 
 ## Tests
 
