@@ -21,7 +21,7 @@ So, before you download, install, or use **any** skill (this one included):
 1. **Read the source** — it's plain text. If you can't see what it does, don't run it.
 2. **Have your agent analyse it for you** — ask OpenClaw to review the skill's `SKILL.md`
    and scripts for shell-exec, credential access, paste-host uploads, and obfuscated
-   (base64) payloads *before* enabling it.
+   (base64) payloads *before* enabling it. ClawCheck does this with `--vet <skill>`.
 3. **Pin a known release**, prefer signed / VirusTotal-clean skills, and rotate any secret a
    skill could have reached if you ever suspect it.
 
@@ -84,7 +84,7 @@ malicious-skill wave, an audit skill should prove its own safety; this one does.
 ## Install & run
 
 ```bash
-openclaw skills install git:<owner>/clawcheck   # from GitHub (pin a release tag)
+openclaw skills install git:gl0di/clawcheck      # from GitHub
 openclaw skills install clawcheck                # from ClawHub (once published)
 # then ask your agent: "audit my OpenClaw setup with clawcheck"
 ```
@@ -120,7 +120,7 @@ and shows it to you **right there in the chat** — no terminal, no setup. You s
 3. a **shareable badge** (grade only — safe to post; the findings stay private).
 
 To keep a copy, add `--save report.txt` and ClawCheck writes the full report to that file
-(the only thing it ever writes). For automation, `--json` gives a machine-readable result.
+(written only when you ask). For automation, `--json` gives a machine-readable result.
 
 ## Threat monitoring
 
@@ -171,9 +171,9 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Status
 
-Prototype (v0.3). Passive, read-only checks, installed-skill malware vetting, and the built-in
-`openclaw security audit` merged in. Active live red-teaming (battle-tested score), history/trend,
-and percentile ("safer than X% of agents") are on the roadmap.
+Prototype (v0.3). Passive, read-only checks, installed-skill malware vetting, the built-in
+`openclaw security audit` merged in, and a first active injection self-test (`--canary`). Full
+live red-teaming, history/trend, and percentile ("safer than X% of agents") are on the roadmap.
 
 ## Tests
 
