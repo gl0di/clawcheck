@@ -32,7 +32,8 @@ def snapshot(ctx, findings, score) -> dict:
         "version": SNAPSHOT_VERSION,
         "score": score.score,
         "grade": score.grade,
-        "checks": {f.id: f.status for f in findings},
+        "checks": {f.id: f.status for f in findings
+                   if not getattr(f, "suppressed", False)},
         "skills": {n: _h(b) for n, b in ctx.installed_skills.items()},
         "bootstrap": {n: _h(t) for n, t in ctx.bootstrap.items()},
         "native_count": native_count,

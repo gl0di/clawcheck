@@ -3,6 +3,27 @@
 All notable changes to ClawCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.4.0] — 2026-06-19
+
+### Added
+- **Baseline suppression (`.clawcheckignore`).** Accept findings you've reviewed: list a check
+  id (`B14`) or a finding fingerprint (`B14:ab12cd34`), one per line. Suppressed findings drop
+  out of the score, the report, and monitor alerts. `--show-suppressed` lists them.
+- **B17 — Autonomy / heartbeat actions.** Flags when the agent runs autonomously (a `HEARTBEAT.md`
+  or schedule) so it can act without you — verify it can't be steered by untrusted input.
+- **B18 — Subagent delegation.** Flags when subagents can be spawned and may inherit elevated/exec
+  tools without human approval.
+- **B19 — Data at-rest protection.** Flags group/world-readable memory/log directories and log
+  files (conversation data / PII exposure). POSIX only.
+
+### Fixed
+- **Skill registration.** `SKILL.md` misused `requires.config` (a config *key* list) for a file
+  path, so OpenClaw treated the requirement as unmet and `/clawcheck` was not available as a
+  command. Removed it — the skill now always registers and handles a missing config gracefully.
+- **B3 over-strict.** A non-`minimal` `tools.profile` (e.g. `coding`) is a least-privilege
+  preference, not a vulnerability — it is now a WARN, not a hard FAIL that capped the score.
+  B3 fails only on genuine over-privilege (wildcard `allowFrom`, permissive reachability).
+
 ## [0.3.0] — 2026-06-19
 
 ### Added

@@ -31,7 +31,8 @@ class ScoreResult:
 
 
 def compute(findings: list[Finding]) -> ScoreResult:
-    scored = [f for f in findings if f.scored and f.status != UNKNOWN]
+    scored = [f for f in findings if f.scored and f.status != UNKNOWN
+              and not getattr(f, "suppressed", False)]
     total = sum(WEIGHT[f.severity] for f in scored)
     if total == 0:
         return ScoreResult(0, "F", False, 0, 0, 0)

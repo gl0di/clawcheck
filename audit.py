@@ -16,9 +16,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from clawcheck import (  # noqa: E402
-    audit, diff, load_state, make_canary, render_canary, render_card, render_json,
-    render_monitor, render_prompts, render_report, render_svg, save_state, snapshot,
-    vet_skill,
+    audit, diff, fingerprint, load_ignore, load_state, make_canary, render_canary,
+    render_card, render_json, render_monitor, render_prompts, render_report, render_svg,
+    save_state, snapshot, vet_skill,
 )
 from clawcheck.monitor import DEFAULT_STATE  # noqa: E402
 
@@ -64,6 +64,8 @@ def main(argv=None) -> int:
     p.add_argument("--badge", metavar="PATH", help="write a shareable SVG badge to PATH")
     p.add_argument("--prompts", action="store_true",
                    help="print a copy-paste fix prompt for each finding")
+    p.add_argument("--show-suppressed", action="store_true",
+                   help="list suppressed finding ids + fingerprints and exit")
     args = p.parse_args(argv)
 
     ascii_only = args.ascii or not _unicode_ok()
@@ -80,6 +82,24 @@ def main(argv=None) -> int:
 
     if args.canary:
         _emit(render_canary(make_canary(), ascii_only))
+        return 0
+
+    if args.show_suppressed:
+        from pathlib import Path as _Path
+        ignore = load_ignore(_Path(args.home).expanduser())
+        if not ignore:
+            _emit("No .clawcheckignore entries found.")
+        else:
+            _emit(f"{len(ignore)} suppressed entry/entries in .clawcheckignore:")
+            # Also run audit to get fingerprints of suppressed findings
+            ctx, findings, _ = audit(args.home, include_native=False)
+            suppressed = [f for f in findings if getattr(f, "suppressed", False)]
+            if suppressed:
+                for f in suppressed:
+                    _emit(f"  {f.id}  {fingerprint(f)}  ({f.title})")
+            else:
+                for entry in sorted(ignore):
+                    _emit(f"  {entry}")
         return 0
 
     ctx, findings, score = audit(args.home, include_native=not args.no_native)

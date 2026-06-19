@@ -53,6 +53,9 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
 - **B14 — egress surface:** where the agent can reach out (channels, external skills, tools).
 - **B15 — MCP server trust** boundaries.
 - **B16 — threat monitoring:** whether you actually have monitoring/detection set up at all.
+- **B17 — autonomy / heartbeat:** whether the agent acts on its own and could be steered by untrusted input.
+- **B18 — subagent delegation:** whether spawned subagents can wield elevated/exec tools without approval.
+- **B19 — data at-rest:** group/world-readable memory/log directories (conversation data / PII exposure).
 - Plus your platform's own **`openclaw security audit`**, run for you and merged in.
 
 ## Built-in audit, included for you
@@ -110,6 +113,21 @@ py audit.py --card --ascii
 Cross-platform: pure Python stdlib, pathlib-based paths, POSIX file-permission checks are
 skipped on Windows (NTFS uses ACLs), and all output has an ASCII fallback.
 
+## Updating
+
+OpenClaw remembers where a skill came from, so users get your new versions by updating:
+
+```bash
+openclaw skills update clawcheck     # pull the latest from its source (Git/ClawHub)
+clawhub update --all                 # update every installed skill
+```
+
+(Or re-run the install command.) An auto-updater skill / `update.auto.enabled` in
+`~/.openclaw/openclaw.json` can update on a schedule. Because skills run with the agent's full
+permissions, a malicious *update* is a real supply-chain risk — so each release here is tagged
+and the source is public to read **before** updating. Prefer reviewing/pinning a tag over blind
+auto-update for anything security-sensitive.
+
 ## How you get the report
 
 When you run the skill inside OpenClaw, the agent executes `audit.py`, captures its output,
@@ -162,6 +180,19 @@ python3 audit.py --prompts                   # a copy-paste "ask your agent to f
 - **`--badge PATH`** writes a shields-style SVG (grade + score only) for your README / posts.
 - **`--prompts`** turns every finding into a ready prompt you paste into your agent to fix it.
 
+## Baseline (accepting findings)
+
+Reviewed a finding and decided it's acceptable? Add it to `~/.openclaw/.clawcheckignore` —
+one entry per line, either a check id (`B14`) or a finding fingerprint (`B14:ab12cd34`, shown
+with `--show-suppressed`). Suppressed findings drop out of the **score**, the **report**, and
+**monitor** alerts — so re-runs and `--monitor` stop nagging about things you've accepted.
+
+```
+# ~/.openclaw/.clawcheckignore
+B14            # accept the egress-surface advisory
+B12:1a2b3c4d   # accept one specific local-model finding
+```
+
 ## Scoring
 
 Weighted pass-rate (CRITICAL=10, HIGH=6, MEDIUM=3, LOW=1). **Honesty hard-caps:** any open
@@ -171,9 +202,10 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Status
 
-Prototype (v0.3). Passive, read-only checks, installed-skill malware vetting, the built-in
-`openclaw security audit` merged in, and a first active injection self-test (`--canary`). Full
-live red-teaming, history/trend, and percentile ("safer than X% of agents") are on the roadmap.
+Prototype (v0.4). Passive, read-only checks (B1–B19), installed-skill malware vetting, baseline
+suppression, the built-in `openclaw security audit` merged in, and a first active injection
+self-test (`--canary`). Full live red-teaming, history/trend, and percentile ("safer than X% of
+agents") are on the roadmap.
 
 ## Tests
 

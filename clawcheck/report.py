@@ -47,7 +47,9 @@ def render_report(findings: list[Finding], score: ScoreResult,
                   ascii_only: bool = False, native=None) -> str:
     icon = _ICON_ASCII if ascii_only else _ICON
     ok = "[OK]" if ascii_only else "✅"
-    issues = [f for f in findings if f.status in (FAIL, WARN)]
+    suppressed_count = sum(1 for f in findings if getattr(f, "suppressed", False))
+    issues = [f for f in findings
+              if f.status in (FAIL, WARN) and not getattr(f, "suppressed", False)]
     issues.sort(key=lambda f: (_SEV_ORDER.get(f.severity, 9), f.status != FAIL))
     lines = ["ClawCheck - OpenClaw Security Audit", "=" * 44,
              f"Score: {score.score}/100   Grade: {score.grade}   "
@@ -63,6 +65,9 @@ def render_report(findings: list[Finding], score: ScoreResult,
         lines.append("")
         for f in issues:
             _render_finding(lines, icon, f)
+
+    if suppressed_count:
+        lines.append(f"({suppressed_count} finding(s) suppressed via .clawcheckignore)")
 
     if native is not None:
         lines.append("--- Also from OpenClaw's built-in `security audit` ---")

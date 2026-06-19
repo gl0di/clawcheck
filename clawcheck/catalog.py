@@ -69,6 +69,12 @@ CATALOG: list[CheckMeta] = [
               HIGH, "hardening", "MCP Trust"),
     CheckMeta("B16", "Threat monitoring / detection in place",
               MEDIUM, "hardening", "Monitoring"),
+    CheckMeta("B17", "Autonomy / heartbeat actions",
+              MEDIUM, "hardening", "Autonomy Control"),
+    CheckMeta("B18", "Subagent delegation",
+              MEDIUM, "hardening", "Least Privilege / Subagents"),
+    CheckMeta("B19", "Data at-rest protection (memory/logs)",
+              MEDIUM, "hardening", "Data Protection"),
     # advisory (not scored)
     CheckMeta("C3", "Backups of SOUL.md / memory", LOW, "advisory", "Backups", scored=False),
     CheckMeta("C4", "OpenClaw version / update hygiene", LOW, "advisory", "Patch hygiene", scored=False),
@@ -88,3 +94,4 @@ class Finding:
     framework: str
     scored: bool = True
     evidence: list[str] = field(default_factory=list)
+    suppressed: bool = False

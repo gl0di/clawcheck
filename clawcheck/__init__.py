@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from . import baseline as _baseline
+from .baseline import apply as apply_baseline
+from .baseline import fingerprint, load_ignore
 from .canary import evaluate, make_canary, render_canary
 from .checks import run_all, vet_skill
 from .collector import collect
@@ -18,7 +21,7 @@ from .report import (
 )
 from .scoring import ScoreResult, compute
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 
 def audit(home: Path | str = "~/.openclaw", include_native: bool = False,
@@ -31,6 +34,8 @@ def audit(home: Path | str = "~/.openclaw", include_native: bool = False,
     """
     ctx = collect(home)
     findings = run_all(ctx)
+    ignore = _baseline.load_ignore(home)
+    _baseline.apply(findings, ignore)
     score = compute(findings)
     if include_native:
         ctx.native = run_native_audit(native_bin, native_timeout)
@@ -43,4 +48,5 @@ __all__ = [
     "render_svg", "render_prompts", "vet_skill",
     "make_canary", "evaluate", "render_canary",
     "snapshot", "diff", "load_state", "save_state", "__version__",
+    "load_ignore", "apply_baseline", "fingerprint",
 ]

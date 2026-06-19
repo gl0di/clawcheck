@@ -240,15 +240,17 @@ def check_least_privilege(ctx: Context) -> Finding:
         hard.append(f"tools.elevated.allowFrom has {len(allow)} entries (too broad)")
     profile = str(dig(cfg, "tools.profile", "")).lower()
     if profile and profile != "minimal":
-        hard.append(f"tools.profile='{dig(cfg, 'tools.profile')}' (not minimal)")
+        # a broader profile (e.g. "coding") is a least-privilege preference, not a hole —
+        # WARN, never a hard FAIL (the native audit does not fail it either).
+        soft.append(f"tools.profile='{dig(cfg, 'tools.profile')}' is broader than minimal")
     if dig(cfg, "plugins.allow") is None and _plugins(cfg):
         soft.append("no plugins.allow reachability allowlist (plugins.entries present)")
     if dig(cfg, "plugins.tools_reachable_policy") == "permissive":
         hard.append("plugins.tools_reachable_policy is permissive")
     if hard:
         return _finding("B3", FAIL, "; ".join(hard + soft),
-                        "Set tools.profile=minimal, restrict tools.elevated.allowFrom to specific "
-                        "owner IDs (no '*'), and define a plugins.allow reachability allowlist.",
+                        "Restrict tools.elevated.allowFrom to specific owner IDs (no '*'), tighten "
+                        "plugins.tools_reachable_policy, and define a plugins.allow allowlist.",
                         hard + soft)
     if soft:
         return _finding("B3", WARN, "; ".join(soft),
@@ -648,6 +650,164 @@ def check_monitoring(ctx: Context) -> Finding:
                     "`audit.py --monitor` so changes don't go unnoticed.")
 
 
+# ---------- B17: autonomy / heartbeat actions ----------
+def check_autonomy(ctx: Context) -> Finding:
+    """Does the agent act autonomously (heartbeat) and can it take outbound actions?"""
+    cfg = ctx.config
+
+    # Signal 1: a HEARTBEAT.md bootstrap file is present
+    has_heartbeat_file = any(k.endswith("HEARTBEAT.md") for k in ctx.bootstrap)
+    # Signal 2: heartbeat / schedule / cron keys anywhere in config
+    has_heartbeat_cfg = bool(
+        dig(cfg, "heartbeat") or dig(cfg, "schedule") or dig(cfg, "cron")
+    )
+    autonomous = has_heartbeat_file or has_heartbeat_cfg
+
+    if not autonomous:
+        return _finding("B17", UNKNOWN,
+                        "No autonomy/heartbeat signal detected.",
+                        "—")
+
+    tools = _enabled_tools(cfg)
+    has_outbound = _hint(tools, OUTBOUND_TOOL_HINTS)
+
+    if has_outbound:
+        return _finding(
+            "B17", WARN,
+            "Agent runs autonomously (heartbeat) and can take outbound actions — "
+            "ensure it cannot act on untrusted input without approval.",
+            "Add an approval gate (tools.confirm / tools.requireApproval) for all "
+            "outbound/exec actions triggered by heartbeat tasks; validate any "
+            "external content before acting on it.",
+        )
+    return _finding(
+        "B17", WARN,
+        "Agent runs on a heartbeat schedule — verify heartbeat tasks cannot be "
+        "manipulated by untrusted input (e.g. memory poisoning, injected task files).",
+        "Keep heartbeat task lists write-protected and review them periodically.",
+    )
+
+
+# ---------- B18: subagent delegation ----------
+def _has_subagents(cfg: dict) -> bool:
+    """True if any subagent delegation is configured."""
+    if dig(cfg, "agents.subagents"):
+        return True
+    if dig(cfg, "agents.defaults.subagents"):
+        return True
+    agent_list = dig(cfg, "agents.list")
+    if isinstance(agent_list, list) and len(agent_list) > 1:
+        # Multiple agents in the list implies subagent delegation
+        return True
+    return False
+
+
+def check_subagents(ctx: Context) -> Finding:
+    """Subagents can inherit elevated/exec tools without human approval."""
+    cfg = ctx.config
+
+    if not _has_subagents(cfg):
+        return _finding("B18", UNKNOWN,
+                        "No subagent delegation configured.",
+                        "—")
+
+    tools = _enabled_tools(cfg)
+    has_elevated = bool(dig(cfg, "tools.elevated.allowFrom"))
+    has_exec = "exec" in tools or _hint(tools, ("exec", "shell"))
+    risky_tools = has_elevated or has_exec
+
+    if not risky_tools:
+        return _finding("B18", UNKNOWN,
+                        "Subagents configured but no elevated/exec tools detected — "
+                        "delegation risk is low.",
+                        "If you later add elevated or exec tools, also add "
+                        "tools.requireApproval to gate subagent actions.")
+
+    approval = (
+        dig(cfg, "tools.confirm")
+        or dig(cfg, "tools.requireApproval")
+        or dig(cfg, "tools.elevated.requireApproval")
+    )
+    if approval and approval not in (False, "off", "never"):
+        return _finding("B18", PASS,
+                        "Subagents can be spawned but elevated/exec actions require approval.",
+                        "Keep approval gating enabled for all subagent-accessible tools.")
+
+    return _finding(
+        "B18", WARN,
+        "Subagents can be spawned and may inherit elevated/exec tools without "
+        "human approval.",
+        "Set tools.confirm or tools.requireApproval (or tools.elevated.requireApproval) "
+        "so subagent-triggered elevated/exec actions need explicit human sign-off.",
+    )
+
+
+# ---------- B19: data at-rest protection (POSIX only) ----------
+def check_data_atrest(ctx: Context) -> Finding:
+    """Memory/log directories and log files are not group/world-readable."""
+    if not _is_posix():
+        return _finding("B19", UNKNOWN,
+                        "POSIX permission checks not applicable on this platform.",
+                        "—")
+
+    loose: list[str] = []
+
+    # Candidate directories: workspace*/memory, workspace*/logs, <home>/logs
+    candidates_dirs: list[Path] = []
+    try:
+        for entry in ctx.home.iterdir():
+            if entry.name.startswith("workspace") and entry.is_dir():
+                for sub in ("memory", "logs"):
+                    d = entry / sub
+                    if d.is_dir():
+                        candidates_dirs.append(d)
+        logs_dir = ctx.home / "logs"
+        if logs_dir.is_dir():
+            candidates_dirs.append(logs_dir)
+    except OSError:
+        pass
+
+    for d in candidates_dirs:
+        try:
+            mode = d.stat().st_mode & 0o777
+            if mode & 0o077:
+                loose.append(f"{d.relative_to(ctx.home)} (mode {oct(mode)[-3:]})")
+        except OSError:
+            pass
+
+    # *.log files directly under <home>
+    try:
+        for f in ctx.home.iterdir():
+            if f.is_file() and f.suffix.lower() == ".log":
+                try:
+                    mode = f.stat().st_mode & 0o777
+                    if mode & 0o077:
+                        loose.append(f"{f.name} (mode {oct(mode)[-3:]})")
+                except OSError:
+                    pass
+    except OSError:
+        pass
+
+    if not loose and not candidates_dirs:
+        return _finding("B19", UNKNOWN,
+                        "No memory/log directories found to inspect.",
+                        "—")
+    if loose:
+        joined = "; ".join(loose[:8])
+        extra = f" (+{len(loose) - 8} more)" if len(loose) > 8 else ""
+        return _finding(
+            "B19", WARN,
+            f"Memory/logs are group/world-readable — conversation data/PII at rest "
+            f"is exposed: {joined}{extra}",
+            "Run `chmod 700` on memory/log directories and `chmod 600` on log files "
+            "to restrict access to the owner only.",
+            evidence=loose,
+        )
+    return _finding("B19", PASS,
+                    "Memory/log directories have tight permissions (owner-only).",
+                    "Keep memory and log directories at chmod 700/600.")
+
+
 # ---------- C4: version / update hygiene (advisory) ----------
 def check_version(ctx: Context) -> Finding:
     ver = dig(ctx.config, "meta.lastTouchedVersion")
@@ -665,7 +825,8 @@ CHECKS = [
     check_sandbox, check_supply_chain, check_bootstrap_injection,
     check_memory_poisoning, check_human_approval, check_leak,
     check_audit_log, check_tls, check_local_first,
-    check_installed_skills, check_egress, check_mcp, check_monitoring, check_version,
+    check_installed_skills, check_egress, check_mcp, check_monitoring,
+    check_autonomy, check_subagents, check_data_atrest, check_version,
 ]
 
 
