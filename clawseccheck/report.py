@@ -93,12 +93,15 @@ def render_report(findings: list[Finding], score: ScoreResult,
 
     if suppressed_count:
         lines.append(t("report.suppressed_count", lang, n=suppressed_count))
-        _CRITICAL_CHECK_IDS = {"B1", "B2", "B13", "B20"}
+        # Surface suppressed findings that either cap the score (a FAILed CRITICAL→49 / HIGH→79)
+        # or hit a sensitive check (B1/B2/B13/B20). Hiding these silently could turn an F into an
+        # A via one .clawseccheckignore line, so they stay visible no matter what the ignore says.
+        _SENSITIVE_IDS = {"B1", "B2", "B13", "B20"}
         for f in findings:
             if not getattr(f, "suppressed", False):
                 continue
-            if f.severity == CRITICAL or f.id in _CRITICAL_CHECK_IDS:
-                lines.append(t("report.gov_warning", lang, id=f.id))
+            if (f.status == FAIL and f.severity in (CRITICAL, HIGH)) or f.id in _SENSITIVE_IDS:
+                lines.append(t("report.gov_warning", lang, id=f.id, sev=f.severity))
 
     if native is not None:
         lines.append(t("report.native_header", lang))

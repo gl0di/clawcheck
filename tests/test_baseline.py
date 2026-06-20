@@ -67,13 +67,22 @@ def test_suppressed_critical_severity_emits_governance_warning():
 
 
 def test_suppressed_critical_check_id_emits_governance_warning():
-    """render_report warns when a critical check id (B1/B2/B13/B20) is suppressed,
-    even when its catalog severity is not CRITICAL."""
-    # B20 is MEDIUM severity but is a critical check id
+    """render_report warns when a sensitive check id (B1/B2/B13/B20) is suppressed,
+    even when its severity is not CRITICAL (message now states the real severity)."""
+    # B20 is MEDIUM severity but is a sensitive check id
     supp = _f("B20", "MEDIUM", WARN, "bootstrap world-writable")
     supp.suppressed = True
     out = render_report([supp], compute([supp]))
-    assert "WARNING: a CRITICAL finding (B20) is suppressed" in out
+    assert "WARNING: a MEDIUM finding (B20) is suppressed" in out
+
+
+def test_suppressed_high_severity_fail_emits_governance_warning():
+    """Regression (H3): a suppressed HIGH FAIL caps the score at 79, so hiding it inflates
+    the grade — it must still be surfaced, not silently dropped."""
+    supp = _f("B22", HIGH, FAIL, "self-modification path")
+    supp.suppressed = True
+    out = render_report([supp], compute([supp]))
+    assert "WARNING: a HIGH finding (B22) is suppressed" in out
 
 
 def test_suppressed_non_critical_does_not_emit_governance_warning():

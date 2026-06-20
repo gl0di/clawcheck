@@ -56,8 +56,10 @@ STRINGS: dict[str, dict[str, str]] = {
         "he": "({n} ממצא(ים) מושתקים באמצעות .clawseccheckignore)",
     },
     "report.gov_warning": {
-        "en": "WARNING: a CRITICAL finding ({id}) is suppressed via .clawseccheckignore",
-        "he": "אזהרה: ממצא קריטי ({id}) מושתק באמצעות .clawseccheckignore",
+        "en": "WARNING: a {sev} finding ({id}) is suppressed via .clawseccheckignore — "
+              "it still counts against your real security; review your ignore list.",
+        "he": "אזהרה: ממצא {sev} ({id}) מושתק באמצעות .clawseccheckignore — "
+              "הוא עדיין נחשב לאבטחה האמיתית שלך; בדוק את רשימת ההתעלמות.",
     },
     "report.native_header": {
         "en": "--- Also from OpenClaw's built-in `security audit` ---",

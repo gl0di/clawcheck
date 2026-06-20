@@ -77,3 +77,25 @@ def test_gateway_bind_ipv4_any_still_exposed():
 def test_gateway_bind_ipv4_loopback_is_not_public():
     cfg = {"gateway": {"bind": "127.0.0.1:8765", "auth": {"mode": "none"}}}
     assert check_gateway(_ctx(cfg)).status == "PASS"
+
+
+# ---- H5: IPv6 zone-id stripping ----
+def test_parse_bind_host_ipv6_loopback_with_zone_id():
+    # ::1%eth0 must parse to ::1 (the zone id is not part of the address).
+    assert parse_bind_host("::1%eth0") == "::1"
+
+
+def test_parse_bind_host_ipv6_loopback_bracket_zone_id():
+    # [::1%eth0]:8765 bracketed form must also strip the zone.
+    assert parse_bind_host("[::1%eth0]:8765") == "::1"
+
+
+def test_parse_bind_host_ipv6_link_local_with_zone_id():
+    # fe80::1%eth0 — link-local with zone; zone stripped, result kept as-is.
+    assert parse_bind_host("fe80::1%eth0") == "fe80::1"
+
+
+def test_gateway_bind_ipv6_loopback_with_zone_id_not_flagged():
+    # [::1%eth0]:8765 is still IPv6 loopback — zone ID must not cause a false FAIL.
+    cfg = {"gateway": {"bind": "[::1%eth0]:8765", "auth": {"mode": "none"}}}
+    assert check_gateway(_ctx(cfg)).status == "PASS"

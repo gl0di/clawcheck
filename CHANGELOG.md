@@ -3,6 +3,29 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.17.2] — 2026-06-20
+
+Hardening pass from the v0.17.1 internal code review (all defense-in-depth — the tool is local
+and read-only, none of these was remotely exploitable). +21 regression tests.
+
+### Fixed
+- **H1 — symlink directory escape** (`collector.py`): installed-skill collection followed a
+  directory symlink under `skills/` (e.g. `evil -> /etc`) and read text outside the audit surface.
+  Symlinked skill directories are now skipped.
+- **H2 — secret leak into the report** (`checks.py`/B13): a hostile skill's base64/PowerShell-encoded
+  payload could decode to a secret-shaped string and appear unredacted in the report. Decoded-payload
+  previews are now run through `redact()`.
+- **H3 — silent suppression of a score-capping finding** (`report.py`): suppressing a FAILed
+  CRITICAL/HIGH (or a sensitive check B1/B2/B13/B20) via `.clawseccheckignore` dropped it from the
+  report while uncapping the score — a one-line way to inflate the grade. Such suppressions are now
+  always surfaced with their real severity.
+- **H4 — swallowed native exit code** (`native.py`): a non-zero exit from `openclaw security audit`
+  is now surfaced (exit code + stderr tail) instead of being reported as "ok".
+- **H5 — IPv6 zone-id false positive** (`parse_bind_host`): a loopback/link-local bind with a zone
+  id (`::1%eth0`, `[fe80::1%eth0]:port`) is no longer mis-flagged as publicly exposed.
+- **H6 — per-skill file-count cap** (`collector.py`): scanning a skill with very many files is now
+  bounded (file count, in addition to the existing byte caps).
+
 ## [0.17.1] — 2026-06-20
 
 Docs only — README accuracy pass, no code change.

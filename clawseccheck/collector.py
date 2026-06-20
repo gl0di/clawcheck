@@ -28,6 +28,7 @@ _OWN_SKILL_NAMES = {"clawseccheck", "clawshield"}
 _MAX_SKILLS = 300
 _MAX_BYTES_PER_SKILL = 60_000
 _MAX_FILE_BYTES = 200_000
+_MAX_FILES_PER_SKILL = 500
 
 _COMMENT_RE = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 _TRAILING_COMMA_RE = re.compile(r",(\s*[}\]])")
@@ -65,14 +66,14 @@ def _read_skill_text(skill_dir: Path) -> str:
     refused, so a malicious skill cannot use a symlink to make the auditor read
     (and surface) a file elsewhere on disk.
     """
-    parts, total = [], 0
+    parts, total, file_count = [], 0, 0
     try:
         root = skill_dir.resolve()
     except OSError:
         return ""
     files = sorted(skill_dir.rglob("*"))
     for f in files:
-        if total >= _MAX_BYTES_PER_SKILL:
+        if total >= _MAX_BYTES_PER_SKILL or file_count >= _MAX_FILES_PER_SKILL:
             break
         if f.is_symlink() or not f.is_file() or f.suffix.lower() not in _SKILL_TEXT_EXT:
             continue
@@ -88,6 +89,7 @@ def _read_skill_text(skill_dir: Path) -> str:
         chunk = text[: _MAX_BYTES_PER_SKILL - total]
         parts.append(f"# file: {f.name}\n{chunk}")
         total += len(chunk)
+        file_count += 1
     return "\n".join(parts)
 
 
@@ -100,7 +102,7 @@ def _read_installed_skills(home: Path, ctx: Context) -> None:
         for sd in sorted(base.iterdir()):
             if len(ctx.installed_skills) >= _MAX_SKILLS:
                 return
-            if not sd.is_dir() or sd.name.lower() in _OWN_SKILL_NAMES:
+            if sd.is_symlink() or not sd.is_dir() or sd.name.lower() in _OWN_SKILL_NAMES:
                 continue
             if not (sd / "SKILL.md").is_file():
                 continue

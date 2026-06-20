@@ -112,7 +112,14 @@ def run_native_audit(openclaw_bin: str = "openclaw", timeout: int = 60,
 
     data = _parse(proc.stdout)
     if data is None:
+        if proc.returncode != 0:
+            note = f"openclaw security audit exited {proc.returncode}"
+            if proc.stderr:
+                note += f": {proc.stderr.strip()[:300]}"
+            return NativeResult("error", note=note)
         return NativeResult("error", note="could not parse openclaw security audit JSON output")
     findings = [_to_finding(d) for d in _extract(data)]
-    return NativeResult("ok", findings=findings,
-                        note=f"{len(findings)} finding(s) from openclaw security audit")
+    note = f"{len(findings)} finding(s) from openclaw security audit"
+    if proc.returncode != 0:
+        note += f" (openclaw exited {proc.returncode})"
+    return NativeResult("ok", findings=findings, note=note)

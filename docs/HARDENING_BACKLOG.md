@@ -6,7 +6,7 @@ Severity is relative to a security *tool's* own bar. Cross-referenced with [THRE
 
 ## Code-review findings (existing code)
 
-- [ ] **H1 · should-fix · `clawseccheck/collector.py:103` — symlink-directory escape.**
+- [x] **H1 · should-fix · `clawseccheck/collector.py:103` — symlink-directory escape.**
   `_read_installed_skills` checks `sd.is_dir()` (which follows symlinks) but not `sd.is_symlink()`.
   A directory symlink under `skills/` (e.g. `evil -> /some/dir`) whose target holds a `SKILL.md`
   causes the tool to read text files outside the declared audit surface. The file-level guard in
@@ -14,7 +14,7 @@ Severity is relative to a security *tool's* own bar. Cross-referenced with [THRE
   **Fix:** add `if sd.is_symlink(): continue` before the `sd.is_dir()` check. Test: symlinked skill
   dir is skipped.
 
-- [ ] **H2 · should-fix · report path — secret values not redacted in the report.**
+- [x] **H2 · should-fix · report path — secret values not redacted in the report.**
   `logsafe.redact()` runs on log output only, never on the rendered report/`--save`/HTML/JSON.
   B1 is safe (it prints key *paths*, not values), but the B13 base64-decoded payload preview
   (`checks.py` ~740) can decode hostile content into a secret-shaped string (`sk-ant-…`) that then
@@ -23,7 +23,7 @@ Severity is relative to a security *tool's* own bar. Cross-referenced with [THRE
   final report body before emit. Test: a skill whose base64 decodes to a secret-shaped string is
   redacted in the report.
 
-- [ ] **H3 · should-fix · `baseline.py` / `report.py` — silent suppression of CRITICAL.**
+- [x] **H3 · should-fix · `baseline.py` / `report.py` — silent suppression of CRITICAL.**
   Suppressing a finding drops it from the score *and* the default report, so a suppressed CRITICAL
   silently uncaps the score (F can become A) with no visible trace except `--show-suppressed`.
   There is also no reason/expiry on suppressions.
@@ -31,16 +31,16 @@ Severity is relative to a security *tool's* own bar. Cross-referenced with [THRE
   HIGH/CRITICAL in the default report; optionally support `reason`/`expires` per entry. Test:
   suppressing a CRITICAL keeps it visible in the report and is flagged in the score explanation.
 
-- [ ] **H4 · nit · `clawseccheck/native.py:114` — non-zero exit swallowed.**
+- [x] **H4 · nit · `clawseccheck/native.py:114` — non-zero exit swallowed.**
   `proc.returncode` is never checked; a non-zero exit from `openclaw security audit` with parseable
   JSON still yields status `"ok"`. **Fix:** surface the exit code in the note (and treat non-zero +
   no data as `error`).
 
-- [ ] **H5 · nit · `parse_bind_host` — IPv6 zone-id loopback false positive.**
+- [x] **H5 · nit · `parse_bind_host` — IPv6 zone-id loopback false positive.**
   `::1%eth0` and link-local `fe80::…%zone` are classified as exposed (the LOOPBACK set has bare
   `::1`). **Fix:** strip `%zone` before classification and treat `::1`/`fe80::` accordingly.
 
-- [ ] **H6 · nit · `clawseccheck/collector.py` — no per-skill file-count cap.**
+- [x] **H6 · nit · `clawseccheck/collector.py` — no per-skill file-count cap.**
   Byte caps exist (`_MAX_BYTES_PER_SKILL`, `_MAX_FILE_BYTES`, `_MAX_SKILLS`) but a single skill with
   thousands of tiny files still iterates them all via `rglob`. **Fix:** add a file-count guard in the
   `_read_skill_text` loop.

@@ -39,31 +39,46 @@ EXPOSED_BINDS = {"0.0.0.0", "::", "all", "public", "*"}
 def parse_bind_host(value) -> str:
     """Extract the host portion from a gateway.bind value, handling IPv6 correctly.
 
+    Zone IDs (e.g. ``%eth0``) are stripped from IPv6 addresses so that the
+    loopback/wildcard classification works regardless of whether the caller
+    appended a scope suffix.
+
     Examples::
-        "127.0.0.1:8080" -> "127.0.0.1"
-        "[::1]:8765"      -> "::1"
-        "::"              -> "::"
-        "[::]"            -> "::"
-        "0.0.0.0"         -> "0.0.0.0"
-        ""                -> ""
+        "127.0.0.1:8080"   -> "127.0.0.1"
+        "[::1]:8765"        -> "::1"
+        "[::1%eth0]:8765"   -> "::1"
+        "::1%eth0"          -> "::1"
+        "::"                -> "::"
+        "[::]"              -> "::"
+        "0.0.0.0"           -> "0.0.0.0"
+        ""                  -> ""
     """
     s = str(value or "").strip().lower()
     if not s:
         return ""
     # Bracketed IPv6 with optional port: [::1]:port or [::]
+    # Zone ID may appear inside the brackets: [::1%eth0]:port
     if s.startswith("["):
         end = s.find("]")
         if end != -1:
-            return s[1:end]  # strip [..] -> e.g. "::1" or "::"
+            host = s[1:end]  # e.g. "::1" or "::" or "::1%eth0"
+            # Strip zone ID from bracketed form.
+            if "%" in host:
+                host = host.split("%", 1)[0]
+            return host
     # Bare wildcard / known special values without colons
     if s in {"::", "0.0.0.0", "*"}:
         return s
     # host:port (IPv4 or hostname) — exactly one colon
     if s.count(":") == 1:
         return s.split(":", 1)[0]
-    # Bare IPv6 address with multiple colons (no brackets, no port)
+    # Bare IPv6 address with multiple colons (no brackets, no port).
+    # May carry a zone ID suffix: ::1%eth0
     if ":" in s:
-        return s
+        host = s
+        if "%" in host:
+            host = host.split("%", 1)[0]
+        return host
     return s
 
 
@@ -724,6 +739,10 @@ def _powershell_encoded_payloads(blob: str) -> list[str]:
 
 
 def check_installed_skills(ctx: Context) -> Finding:
+    # Lazy import to avoid circular dependency: logsafe imports SECRET_PATTERNS
+    # from this module, so a top-level "from .logsafe import redact" would cycle.
+    from .logsafe import redact as _redact  # noqa: PLC0415
+
     skills = ctx.installed_skills
     if not skills:
         return _custom("B13", HIGH, UNKNOWN,
@@ -737,9 +756,11 @@ def check_installed_skills(ctx: Context) -> Finding:
         if _has_cred_exfil(blob):
             crit.append(f"{name}: secret/credential exfiltration (same-line)")
         for payload in _decoded_payloads(blob):
-            crit.append(f"{name}: hidden base64 payload -> '{payload}'")
+            # Redact before the preview enters the finding — the decoded bytes are
+            # attacker-controlled and may contain secret-shaped strings (H2).
+            crit.append(f"{name}: hidden base64 payload -> '{_redact(payload)}'")
         for payload in _powershell_encoded_payloads(blob):
-            crit.append(f"{name}: {payload}")
+            crit.append(f"{name}: {_redact(payload)}")
         for label, rx in _SKILL_HIGH:
             if rx.search(blob):
                 high.append(f"{name}: {label}")
