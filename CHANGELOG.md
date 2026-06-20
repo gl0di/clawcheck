@@ -3,6 +3,14 @@
 All notable changes to ClawCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.15.3] — 2026-06-20
+
+### Fixed
+- **Docs: scope the ClawHub slug.** The bare slug `clawcheck` is used by more than one ClawHub
+  publisher, so `openclaw skills install/update clawcheck` fails with `AMBIGUOUS_SKILL_SLUG`. The
+  install/update instructions now use the owner-scoped `@gl0di/clawcheck`, and recommend the
+  unambiguous `git:gl0di/clawcheck` as the primary channel.
+
 ## [0.15.2] — 2026-06-20
 
 ### Security / hygiene

@@ -101,8 +101,9 @@ malicious-skill wave, an audit skill should prove its own safety; this one does.
 ## Install & run
 
 ```bash
-openclaw skills install git:gl0di/clawcheck      # from GitHub
-openclaw skills install clawcheck                # from ClawHub (once published)
+openclaw skills install git:gl0di/clawcheck      # from GitHub (recommended — unambiguous)
+openclaw skills install @gl0di/clawcheck         # from ClawHub (scope the owner: the bare
+                                                 # slug "clawcheck" is used by more than one publisher)
 # then ask your agent: "audit my OpenClaw setup with clawcheck"
 ```
 
@@ -140,8 +141,9 @@ skipped on Windows (NTFS uses ACLs), and all output has an ASCII fallback.
 OpenClaw remembers where a skill came from, so users get your new versions by updating:
 
 ```bash
-openclaw skills update clawcheck     # pull the latest from its source (Git/ClawHub)
-clawhub update --all                 # update every installed skill
+openclaw skills update @gl0di/clawcheck   # pull the latest (scope the owner — "clawcheck" alone
+                                          # is ambiguous; another publisher also uses that slug)
+clawhub update --all                      # update every installed skill
 ```
 
 (Or re-run the install command.) An auto-updater skill / `update.auto.enabled` in
