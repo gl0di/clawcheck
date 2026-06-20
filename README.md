@@ -415,7 +415,9 @@ subagent sources — and a **risk engine** (`--risk-paths`): combinational chain
 surfaces the highest-risk capability paths (RISK-01 through RISK-10, incl. a powerful agent on an
 unmonitored host) without affecting the deterministic A–F score. All checks are grounded against the real OpenClaw schema (verified from
 docs.openclaw.ai and live fleet configs), so they fire on real installations rather than silently
-missing phantom field paths. The project was renamed to **ClawSecCheck** in v0.16, and v0.17 was a
+missing phantom field paths. Every finding also carries a **confidence** (HIGH = a deterministic
+config-field fact; MEDIUM = a heuristic match worth a human look), shown in the report, `--json`,
+and SARIF. The project was renamed to **ClawSecCheck** in v0.16, and v0.17 was a
 stable-readiness pass driven by an external security review: it fixed an approval-gate false
 positive (checks now read the real `tools.exec.mode` instead of non-existent fields), IPv6 gateway
 bind detection, prompt/report sanitization across **every** output channel (`--prompts`, `--json`,

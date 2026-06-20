@@ -117,7 +117,7 @@ def _meta(cid: str):
 def _finding(cid, status, detail, fix, evidence=None) -> Finding:
     m = _meta(cid)
     return Finding(m.id, m.title, m.severity, status, detail, fix,
-                   m.framework, m.scored, evidence or [])
+                   m.framework, m.scored, evidence or [], confidence=m.confidence)
 
 
 def _channels(cfg: dict) -> dict:
@@ -583,7 +583,8 @@ def check_local_first(ctx: Context) -> Finding:
 def _custom(cid, severity, status, detail, fix, ev=None) -> Finding:
     """Build a finding with an explicit severity (for dynamic-severity checks)."""
     m = BY_ID[cid]
-    return Finding(m.id, m.title, severity, status, detail, fix, m.framework, m.scored, ev or [])
+    return Finding(m.id, m.title, severity, status, detail, fix, m.framework, m.scored, ev or [],
+                   confidence=m.confidence)
 
 
 # ---------- B13: installed-skill / plugin content vetting (ClawHavoc vector) ----------
@@ -1545,8 +1546,11 @@ def check_data_atrest(ctx: Context) -> Finding:
     """Memory/log directories and log files are not group/world-readable."""
     if not _is_posix():
         return _finding("B19", UNKNOWN,
-                        "POSIX permission checks not applicable on this platform.",
-                        "—")
+                        "On Windows, file security uses NTFS ACLs, not POSIX mode bits — "
+                        "ClawSecCheck can't read those read-only (no extra tools), so this is "
+                        "UNKNOWN, never a false PASS.",
+                        "Check the ACLs yourself: `icacls <path>` should not grant write to "
+                        "Users / Everyone / Authenticated Users.")
 
     loose: list[str] = []
 
@@ -1626,8 +1630,11 @@ def check_bootstrap_write_protection(ctx: Context) -> Finding:
     """
     if not _is_posix():
         return _finding("B20", UNKNOWN,
-                        "POSIX permission checks not applicable on this platform.",
-                        "—")
+                        "On Windows, file security uses NTFS ACLs, not POSIX mode bits — "
+                        "ClawSecCheck can't read those read-only (no extra tools), so this is "
+                        "UNKNOWN, never a false PASS.",
+                        "Check the ACLs yourself: `icacls <path>` should not grant write to "
+                        "Users / Everyone / Authenticated Users.")
 
     world_write: list[str] = []   # -> FAIL
     group_write: list[str] = []   # -> WARN (if no FAIL)
@@ -1811,8 +1818,9 @@ def check_self_modification(ctx: Context) -> Finding:
     if not _is_posix():
         return _finding(
             "B22", UNKNOWN,
-            "POSIX permission checks not applicable on this platform.",
-            "—",
+            "On Windows, file security uses NTFS ACLs, not POSIX mode bits — ClawSecCheck "
+            "can't read those read-only (no extra tools), so this is UNKNOWN, never a false PASS.",
+            "Check the ACLs yourself: `icacls <path>` should not grant write to Users / Everyone.",
         )
 
     # Condition (b): writable identity or skills target

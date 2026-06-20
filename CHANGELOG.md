@@ -3,6 +3,33 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.25.0] — 2026-06-20
+
+Closes the open-gap triage from THREAT_COVERAGE honestly: builds the one item that fits the laws
+(per-finding confidence) and is transparent about the two that don't.
+
+### Added
+- **Per-finding confidence** (`HIGH` / `MEDIUM`). Every finding now carries how sure ClawSecCheck is
+  it's correct: **HIGH** = a deterministic config-field fact (we read the real value); **MEDIUM** =
+  a heuristic match on free text or the filesystem that may warrant a human look (B6 bootstrap
+  injection, B13 skill malware, B21 tool-output trust, B23 approval-bypass directives, B42 install
+  hooks, C5 PATH safety, and the `--vet` results). Surfaced everywhere: a `(confidence: medium)` tag
+  on FAIL/WARN lines in the text report, a `confidence` field in `--json`, and `properties.confidence`
+  in SARIF. Aligns with the honesty doctrine (UNKNOWN ≠ PASS → now also "MEDIUM — verify").
+
+### Changed
+- **Windows permission checks (B19/B20/B22) give an honest, actionable UNKNOWN.** Instead of a bare
+  "not applicable", they now explain that NTFS ACLs can't be read read-only without extra tools and
+  point the user at `icacls <path>` to check write access for Users/Everyone themselves.
+
+### Notes — gaps intentionally NOT built (honesty over coverage)
+- **B27 / B28 (agent-level action-gate / taint-provenance):** no OpenClaw config surface exists to
+  check (`tools.confirm`/`requireApproval` are phantom; the real approval gate is `tools.exec.mode`,
+  already covered by B8/B22/B23). Building them as scored checks would mean inventing fields, so they
+  stay **covered combinationally** by the risk engine + B21 — not faked as standalone checks.
+- **Windows NTFS ACL checks:** there is no stdlib, no-subprocess way to read NTFS ACLs, so a real
+  ACL check isn't possible under the project's laws. UNKNOWN (now actionable) is the honest answer.
+
 ## [0.24.0] — 2026-06-20
 
 **Agent Watch** — `--monitor` grows from a baseline→diff into a connection-aware, severity-tagged

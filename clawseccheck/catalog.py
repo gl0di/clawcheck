@@ -29,6 +29,9 @@ class CheckMeta:
     block: str           # "trifecta" | "hardening" | "advisory"
     framework: str       # human-facing taxonomy tag
     scored: bool = True
+    # How sure we are a finding is correct: HIGH = a deterministic config-field fact;
+    # MEDIUM = a heuristic match on free text / filesystem that may need a human look.
+    confidence: str = "HIGH"
 
 
 # Block A — Lethal Trifecta (headline correlation check)
@@ -48,7 +51,7 @@ CATALOG: list[CheckMeta] = [
     CheckMeta("B5", "Plugin / skill supply-chain integrity",
               HIGH, "hardening", "Supply Chain"),
     CheckMeta("B6", "Bootstrap-file injection surface (SOUL.md/AGENTS.md/TOOLS.md)",
-              HIGH, "hardening", "Untrusted↔Trusted separation"),
+              HIGH, "hardening", "Untrusted↔Trusted separation", confidence="MEDIUM"),
     CheckMeta("B7", "Memory poisoning surface (MEMORY.md / memory dir)",
               HIGH, "hardening", "Memory integrity"),
     CheckMeta("B8", "Human approval on destructive actions",
@@ -62,7 +65,7 @@ CATALOG: list[CheckMeta] = [
     CheckMeta("B12", "Local-first & model hygiene",
               LOW, "hardening", "Local First"),
     CheckMeta("B13", "Installed skill / plugin safety (downloaded, not self-made)",
-              HIGH, "hardening", "Supply Chain / ClawHavoc"),
+              HIGH, "hardening", "Supply Chain / ClawHavoc", confidence="MEDIUM"),
     CheckMeta("B14", "Egress surface (where the agent can reach out)",
               MEDIUM, "hardening", "Egress Control", scored=False),
     CheckMeta("B15", "MCP server trust boundaries",
@@ -78,11 +81,11 @@ CATALOG: list[CheckMeta] = [
     CheckMeta("B20", "Bootstrap / memory write protection",
               MEDIUM, "hardening", "Write Integrity"),
     CheckMeta("B21", "Tool-output / retrieved-content trust boundary",
-              MEDIUM, "hardening", "Prompt Injection / Trust Boundary"),
+              MEDIUM, "hardening", "Prompt Injection / Trust Boundary", confidence="MEDIUM"),
     CheckMeta("B22", "Self-modification risk (identity/skill files writable + tools enabled)",
               HIGH, "hardening", "Write Integrity / Self-Modification"),
     CheckMeta("B23", "Approval-bypass directives in bootstrap",
-              HIGH, "hardening", "Human Approval"),
+              HIGH, "hardening", "Human Approval", confidence="MEDIUM"),
     CheckMeta("B24", "MCP server hardening",
               HIGH, "hardening", "MCP Trust"),
     CheckMeta("B25", "Update / pinning hygiene",
@@ -104,7 +107,7 @@ CATALOG: list[CheckMeta] = [
     CheckMeta("B41", "Credential blast-radius assessment",
               MEDIUM, "advisory", "Credential / Blast Radius", scored=True),
     CheckMeta("B42", "Skill/plugin install-time policy (postinstall hooks, writable skill dirs)",
-              MEDIUM, "hardening", "Supply Chain / Install Policy"),
+              MEDIUM, "hardening", "Supply Chain / Install Policy", confidence="MEDIUM"),
     # Host Watch Posture — is anyone watching the machine the agent runs on?
     # Read-only host-monitor detection (hostwatch.detect). LOW + WARN-only (never
     # FAIL): the absence of host monitoring is flagged only when the agent is
@@ -122,7 +125,8 @@ CATALOG: list[CheckMeta] = [
     # advisory (not scored)
     CheckMeta("C3", "Backups of SOUL.md / memory", LOW, "advisory", "Backups", scored=False),
     CheckMeta("C4", "OpenClaw version / update hygiene", LOW, "advisory", "Patch hygiene", scored=False),
-    CheckMeta("C5", "Native binary PATH safety", LOW, "advisory", "Binary Integrity", scored=False),
+    CheckMeta("C5", "Native binary PATH safety", LOW, "advisory", "Binary Integrity",
+              scored=False, confidence="MEDIUM"),
 ]
 
 BY_ID = {c.id: c for c in CATALOG}
@@ -140,3 +144,4 @@ class Finding:
     scored: bool = True
     evidence: list[str] = field(default_factory=list)
     suppressed: bool = False
+    confidence: str = "HIGH"

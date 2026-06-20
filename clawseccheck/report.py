@@ -87,7 +87,10 @@ def _trifecta_ratio(findings: list[Finding]) -> str:
 
 
 def _render_finding(lines, icon, f, lang: str = "en"):
-    lines.append(f"{icon[f.status]} [{f.severity}] {_sanitize(title_for(f.id, f.title, lang))}")
+    conf = getattr(f, "confidence", "HIGH")
+    tag = f"  (confidence: {conf.lower()})" if conf != "HIGH" and f.status in (FAIL, WARN) else ""
+    lines.append(f"{icon[f.status]} [{f.severity}] "
+                 f"{_sanitize(title_for(f.id, f.title, lang))}{tag}")
     if f.detail:
         lines.append(f"    {t('report.label_why', lang)}: {_sanitize(tp(f.detail, lang))}")
     lines.append(f"    {t('report.label_fix', lang)}: {_sanitize(tp(f.fix, lang))}")
@@ -317,7 +320,8 @@ def render_json(findings: list[Finding], score: ScoreResult, *, risk=None) -> st
         "findings": [
             {"id": f.id, "title": _sanitize(f.title), "severity": f.severity,
              "status": f.status, "detail": _sanitize(f.detail),
-             "fix": _sanitize(f.fix), "framework": f.framework}
+             "fix": _sanitize(f.fix), "framework": f.framework,
+             "confidence": getattr(f, "confidence", "HIGH")}
             for f in findings
         ],
         "next_actions": [
