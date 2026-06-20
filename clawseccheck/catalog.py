@@ -103,6 +103,20 @@ CATALOG: list[CheckMeta] = [
               HIGH, "hardening", "Patch hygiene"),
     CheckMeta("B41", "Credential blast-radius assessment",
               MEDIUM, "advisory", "Credential / Blast Radius", scored=True),
+    # Host Watch Posture — is anyone watching the machine the agent runs on?
+    # Read-only host-monitor detection (hostwatch.detect). LOW + WARN-only (never
+    # FAIL): the absence of host monitoring is flagged only when the agent is
+    # high-privilege, so it never hard-caps the grade.
+    CheckMeta("B50", "Host network monitoring / IDS",
+              LOW, "hardening", "Host Watch / Network IDS"),
+    CheckMeta("B51", "Host audit / syscall logging",
+              LOW, "hardening", "Host Watch / Audit"),
+    CheckMeta("B52", "Host file-integrity monitoring",
+              LOW, "hardening", "Host Watch / FIM"),
+    CheckMeta("B53", "Host endpoint protection / EDR",
+              LOW, "hardening", "Host Watch / EDR"),
+    CheckMeta("B54", "Host firewall active",
+              LOW, "hardening", "Host Watch / Firewall"),
     # advisory (not scored)
     CheckMeta("C3", "Backups of SOUL.md / memory", LOW, "advisory", "Backups", scored=False),
     CheckMeta("C4", "OpenClaw version / update hygiene", LOW, "advisory", "Patch hygiene", scored=False),

@@ -105,6 +105,15 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
 - **B31 — effective-tools bypass:** detects the OpenClaw footgun where `tools.deny: ["write"]` does
   not deny `apply_patch`/`exec` — a believed-safe restriction that still allows file mutation; checks
   global, `toolsBySender`, and per-agent deny lists. Recommends `group:fs` or a complete deny list.
+- **B50–B54 — Host Watch Posture:** widens the lens past the agent to the *machine it runs on* —
+  is anyone watching it? Read-only, filesystem-only detection (no subprocess, no network) of host
+  defensive monitors: **B50** network monitoring / IDS (Suricata, Zeek, Snort, Little Snitch,
+  Sysmon), **B51** host audit / syscall logging (auditd, OpenBSM, Sysmon), **B52** file-integrity
+  monitoring (AIDE, Tripwire, osquery), **B53** endpoint protection / EDR (Wazuh, CrowdStrike,
+  ClamAV, Defender, Santa), **B54** host firewall (ufw, firewalld, nftables, macOS ALF, Windows
+  Firewall). LOW severity, **never FAIL**: a missing monitor is a WARN only when the agent is
+  high-privilege, otherwise PASS; anything not determinable read-only is `UNKNOWN`. Where it can be
+  read without running a command, it distinguishes *enabled* from merely *installed*.
 - Plus your platform's own **`openclaw security audit`**, run for you and merged in.
 
 ## Built-in audit, included for you
@@ -253,7 +262,7 @@ Beyond individual checks, ClawSecCheck runs a **risk engine** that looks for dan
 *combinations* — capability chains where two or more co-occurring properties make a
 compromise catastrophic or trivial to execute.
 
-The nine chains it detects (RISK-01 through RISK-09):
+The ten chains it detects (RISK-01 through RISK-10):
 
 | ID | Severity | Chain |
 |----|----------|-------|
@@ -266,6 +275,7 @@ The nine chains it detects (RISK-01 through RISK-09):
 | RISK-07 | HIGH | Exec/write tool (no approval gate) → writable bootstrap/identity files → persistent compromise |
 | RISK-08 | MEDIUM | Multi-user channel → shared session (`dmScope="main"`) → cross-user data leak |
 | RISK-09 | CRITICAL | Malicious installed skill (B13 fail) → reachable secrets/data → outbound egress → exfiltration |
+| RISK-10 | MEDIUM | Untrusted input → agent can exec/write on host → no host detection (IDS/audit/FIM/EDR) → a breach would be invisible |
 
 Each chain fires **only when every link has positive evidence** — no chain is invented from
 absent or UNKNOWN data, so findings are evidence-gated, which keeps false positives low —
@@ -361,9 +371,11 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Status
 
-v0.18. Read-only checks A1/B1–B26/B30/B31/B32/B33/B38/B39/B41/C3–C5 (incl. write-protection, self-modification,
-approval-bypass, deep MCP, update/pinning hygiene, sender identity strength, control-plane
-mutation reachability, browser/SSRF exposure, and session visibility/cross-user leak),
+v0.20. Read-only checks A1/B1–B26/B30/B31/B32/B33/B38/B39/B41/B50–B54/C3–C5 (incl. write-protection,
+self-modification, approval-bypass, deep MCP, update/pinning hygiene, sender identity strength,
+control-plane mutation reachability, browser/SSRF exposure, session visibility/cross-user leak, and a
+**Host Watch Posture** ring — is the machine the agent runs on watched at all: network IDS, host
+audit, file-integrity, EDR, and host firewall),
 installed-skill malware vetting, baseline suppression + governance, the built-in
 `openclaw security audit` merged in, active injection tests (`--canary`/`--redteam`), a runtime
 dry-run harness (`--dryrun`), HTML report, self-integrity (`--verify-self`), a pip/pipx-installable
@@ -383,8 +395,8 @@ supply-chain gap) — an **expanded agentic red-team suite** (`--redteam`, `--dr
 tool poisoning, MCP-response injection, memory poisoning, multi-agent instruction smuggling,
 approval-bypass via injection, and dirty-input-to-exfil chains across MCP-response, memory, and
 subagent sources — and a **risk engine** (`--risk-paths`): combinational chain detection that
-surfaces the highest-risk capability paths (RISK-01 through RISK-09) without affecting the
-deterministic A–F score. All checks are grounded against the real OpenClaw schema (verified from
+surfaces the highest-risk capability paths (RISK-01 through RISK-10, incl. a powerful agent on an
+unmonitored host) without affecting the deterministic A–F score. All checks are grounded against the real OpenClaw schema (verified from
 docs.openclaw.ai and live fleet configs), so they fire on real installations rather than silently
 missing phantom field paths. The project was renamed to **ClawSecCheck** in v0.16, and v0.17 was a
 stable-readiness pass driven by an external security review: it fixed an approval-gate false

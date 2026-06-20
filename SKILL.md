@@ -1,6 +1,6 @@
 ---
 name: clawseccheck
-version: 0.19.1
+version: 0.20.0
 description: Free, local, read-only security self-audit for your own OpenClaw agent. Scores your setup (A–F), finds the most urgent holes, and gives copy-paste fixes. No API key, no data leaves your machine.
 metadata: {"openclaw":{"emoji":"🔍","os":["darwin","linux","win32"],"user-invocable":true}}
 ---
@@ -29,6 +29,9 @@ It checks, among other things:
 - the **Lethal Trifecta** (untrusted input x sensitive data x outbound actions — keep at most 2 of 3 active together),
 - gateway exposure, channel authentication, plaintext secrets, least privilege, execution sandbox,
   MCP server trust, the agent's egress surface, and whether threat monitoring is active,
+- the **host's defensive posture** (read-only, filesystem-only): whether the machine the agent runs
+  on has any network IDS, host audit logging, file-integrity monitoring, endpoint/EDR sensor, or
+  host firewall — so a powerful agent isn't running blind on an unwatched box,
 - the **content of installed skills/plugins** for the ClawHavoc malware class — shell-exec,
   credential/wallet theft, paste-host uploads, and base64-obfuscated payloads (decoded and
   re-scanned, never executed),

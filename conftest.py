@@ -16,3 +16,20 @@ def _deterministic_fixture_perms():
     for cfg in _FIXTURES.rglob("openclaw.json"):
         cfg.chmod(0o600)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _stub_host_detect(monkeypatch):
+    """Keep host-monitor detection deterministic and offline across the suite.
+
+    Every audit()/CLI run sees an 'unsupported' host, so the B50–B54 host-posture
+    checks report UNKNOWN and never touch the score on the CI/dev machine (whose
+    real host monitors are nondeterministic). Tests that exercise host detection
+    call clawseccheck.hostwatch.detect() directly (with a fake root), or re-patch
+    clawseccheck._host_detect themselves, and are unaffected by this stub.
+    """
+    import clawseccheck
+    monkeypatch.setattr(
+        clawseccheck, "_host_detect",
+        lambda root="/", **_: {"system": "test", "supported": False, "classes": {}},
+    )

@@ -14,6 +14,7 @@ from .baseline import fingerprint, load_ignore
 from .canary import evaluate, make_canary, render_canary
 from .checks import run_all, vet_mcp, vet_skill
 from .collector import collect
+from .hostwatch import detect as _host_detect
 from .monitor import diff, load_state, save_state, snapshot
 from .native import run_native_audit
 from .report import (
@@ -26,18 +27,25 @@ from .sarif import render_sarif
 from .history import load as history_load, record as history_record, render_trend, DEFAULT_HISTORY
 from .guide import suggest_actions, render_next_actions
 
-__version__ = "0.19.1"
+__version__ = "0.20.0"
 
 
 def audit(home: Path | str = "~/.openclaw", include_native: bool = False,
+          include_host: bool = False, host_root: str = "/",
           native_bin: str = "openclaw", native_timeout: int = 60):
     """Run the full audit. Returns (ctx, findings, ScoreResult).
 
-    `include_native=False` keeps the engine fully offline (default, hermetic for
-    tests). The CLI passes `include_native=True` so end users also get OpenClaw's
-    built-in `openclaw security audit` findings in the same report.
+    `include_native=False` and `include_host=False` keep the engine fully offline
+    (default, hermetic for tests). The CLI passes both as True so end users also get
+    OpenClaw's built-in `openclaw security audit` findings and the host-monitor
+    posture (B50–B54) in the same report.
+
+    Host detection is populated BEFORE run_all so the B50–B54 checks can read it.
+    When off, ctx.host stays None and those checks report UNKNOWN (no score impact).
     """
     ctx = collect(home)
+    if include_host:
+        ctx.host = _host_detect(root=host_root)
     findings = run_all(ctx)
     ignore = _baseline.load_ignore(home)
     _baseline.apply(findings, ignore)

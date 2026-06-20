@@ -3,6 +3,41 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.20.0] — 2026-06-20
+
+**Host Watch Posture** — ClawSecCheck now widens the lens by one ring: beyond the *agent's*
+configuration, it asks whether the **host** the agent runs on is being watched at all. A powerful
+agent on an unmonitored machine is a real exposure — if it were compromised, the activity could go
+completely unseen.
+
+### Added
+- **Five host-monitor detection checks (B50–B54)**, all read-only and filesystem-only (no
+  subprocess, no network): **B50** network monitoring / IDS (Suricata, Zeek, Snort, Little Snitch,
+  Sysmon), **B51** host audit / syscall logging (auditd, OpenBSM, Sysmon), **B52** file-integrity
+  monitoring (AIDE, Tripwire, osquery), **B53** endpoint protection / EDR (Wazuh, CrowdStrike,
+  ClamAV, Microsoft Defender, Santa), **B54** host firewall (ufw, firewalld, nftables, macOS ALF,
+  Windows Firewall). Cross-platform (Linux full; macOS / Windows best-effort); whatever cannot be
+  determined read-only is reported **UNKNOWN**, never a fabricated positive.
+- **RISK-10** capability path: *powerful agent on an unmonitored host*. Fires only on positive
+  evidence that all four detection classes (IDS / audit / FIM / EDR) are absent **and** the agent is
+  high-privilege (can exec/write **and** is reachable by untrusted input) — i.e. a breach would be
+  invisible. Zero-false-positive: an inconclusive probe or any present monitor yields no chain.
+- New module `clawseccheck/hostwatch.py` (the read-only detector, with injectable root/platform/PATH
+  for hermetic testing) and `docs/research/host-monitor-signals.md` grounding every detection signal
+  against authoritative docs (only HIGH-confidence signals are used as positives).
+- New `--no-host` flag to skip host-monitor detection. Host scanning is **on by default** in the CLI
+  (part of the default run, like the native audit); the audit engine keeps it off in hermetic mode.
+
+### Design notes
+- **Never FAIL.** B50–B54 are LOW severity and emit WARN only when the agent is high-privilege
+  (otherwise PASS) — so the absence of host monitoring is flagged precisely when a compromise would
+  matter, and it never hard-caps the grade. An agent that is sandboxed / low-reach is not nagged.
+- **Active vs installed.** Where it can be read without running a command (ufw `ENABLED=yes`, a
+  systemd `*.wants/` enable-symlink, the macOS ALF `globalstate`, the Windows `EnableFirewall`
+  registry value) the report distinguishes *enabled* from merely *installed*.
+- Determinism: in hermetic/test mode `ctx.host` is None → B50–B54 report UNKNOWN (excluded from the
+  score), so existing grades are unchanged.
+
 ## [0.19.1] — 2026-06-20
 
 ### Fixed

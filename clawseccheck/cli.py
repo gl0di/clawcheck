@@ -68,6 +68,8 @@ def main(argv=None) -> int:
     p.add_argument("--ascii", action="store_true", help="ASCII-only output (no unicode icons/box)")
     p.add_argument("--no-native", action="store_true",
                    help="do not also run the built-in `openclaw security audit`")
+    p.add_argument("--no-host", action="store_true",
+                   help="skip host-monitor detection (IDS / audit / FIM / EDR / firewall posture)")
     p.add_argument("--save", metavar="PATH", help="also write the report to a file")
     p.add_argument("--monitor", action="store_true",
                    help="monitor mode: alert on what changed since the last check")
@@ -211,7 +213,8 @@ def main(argv=None) -> int:
         return 0
 
     logger.info("auditing home=%s", args.home)
-    ctx, findings, score = audit(args.home, include_native=not args.no_native)
+    ctx, findings, score = audit(args.home, include_native=not args.no_native,
+                                 include_host=not args.no_host)
     logger.debug("ran %d checks", len(findings))
     logger.info("score=%s grade=%s", score.score, score.grade)
 

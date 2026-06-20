@@ -151,6 +151,25 @@ def _session_cross_user(findings: list[Finding], cfg: dict) -> bool:
     return dig(cfg, "session.dmScope") == "main"
 
 
+def _host_blind(ctx: Context) -> bool:
+    """True only when host detection RAN, the platform is supported, and EVERY
+    visibility class (network IDS / audit / FIM / EDR) is definitively ABSENT.
+
+    Per the zero-false-positive doctrine we require POSITIVE evidence of absence —
+    an 'unknown' (couldn't read) or any 'present' monitor yields no chain. Firewall
+    is excluded: it's prevention, not detection of a compromise.
+    """
+    host = getattr(ctx, "host", None)
+    if not host or not host.get("supported"):
+        return False
+    classes = host.get("classes") or {}
+    vis = ("network_ids", "host_audit", "file_integrity", "edr_av")
+    statuses = [(classes.get(c) or {}).get("status") for c in vis]
+    if any(s is None for s in statuses):
+        return False
+    return all(s == "absent" for s in statuses)
+
+
 def _has_multi_user_channel(cfg: dict) -> bool:
     """True when any channel has a group policy (not necessarily open)."""
     channels = cfg.get("channels")
@@ -460,6 +479,44 @@ def _rule_malicious_skill_exfil(ctx: Context, findings: list[Finding],
     )
 
 
+def _rule_host_blind(ctx: Context, tools: list[str], cfg: dict) -> RiskPath | None:
+    """MEDIUM: a high-privilege agent on a host with NO detection monitoring.
+
+    Not an exploit chain like the others — a visibility gap: if this agent is
+    compromised, nothing on the host (IDS / audit / FIM / EDR) would notice.
+    Fires only on positive evidence that all four visibility classes are absent.
+    """
+    if not _host_blind(ctx):
+        return None
+    if not (_has_exec_or_write_tools(tools) and _has_untrusted_ingress(tools, cfg)):
+        return None
+    return RiskPath(
+        id="RISK-10",
+        severity=MEDIUM,
+        title="Powerful agent on an unmonitored host — a breach would be invisible",
+        chain=[
+            "untrusted input reaches the agent",
+            "agent can execute / write on the host",
+            "no host detection (IDS / audit / file-integrity / EDR)",
+            "a compromise would leave no trace",
+        ],
+        why=(
+            "This agent can act on the host (exec / write / elevated tools) and is "
+            "reachable by untrusted input, yet ClawSecCheck found NO host detection "
+            "monitoring — no network IDS, no audit logging, no file-integrity monitor, "
+            "and no endpoint/EDR sensor. If the agent were compromised via a prompt "
+            "injection, the resulting activity would very likely go completely unseen."
+        ),
+        fix=(
+            "Add at least one host detection layer so a compromise is observable: "
+            "enable auditd with watches on the agent's files, install a file-integrity "
+            "monitor (AIDE), and/or deploy an EDR/IDS (Wazuh, Suricata). Alternatively, "
+            "shrink the agent's blast radius (sandbox it, lock channels to an allowlist, "
+            "remove exec/write tools) so an unseen compromise matters less."
+        ),
+    )
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Public API
 # ──────────────────────────────────────────────────────────────────────────────
@@ -509,6 +566,10 @@ def risk_paths(ctx: Context, findings: list[Finding]) -> list[RiskPath]:
         candidates.append(path)
 
     path = _rule_malicious_skill_exfil(ctx, findings, tools, cfg)
+    if path:
+        candidates.append(path)
+
+    path = _rule_host_blind(ctx, tools, cfg)
     if path:
         candidates.append(path)
 

@@ -3020,6 +3020,102 @@ def check_effective_tools(ctx: Context) -> Finding:
     )
 
 
+# ---------- B50–B54: Host Watch Posture (read-only host-monitor detection) ----------
+# These read ctx.host (populated by audit(include_host=True) via hostwatch.detect).
+# In hermetic/test mode ctx.host is None -> UNKNOWN (excluded from the score).
+
+# class key -> plain-language, article-free noun phrase for detail/fix text
+# (article-free so "No {label} detected", "whether {label} is present", and
+#  "Install/enable {label}" all read grammatically).
+_HOST_CLASS_LABEL = {
+    "network_ids": "network monitoring / IDS (Suricata, Zeek, Snort)",
+    "host_audit": "host audit logging (auditd / OpenBSM / Sysmon)",
+    "file_integrity": "file-integrity monitoring (AIDE, Tripwire, osquery)",
+    "edr_av": "endpoint protection / EDR (Wazuh, CrowdStrike, ClamAV, Defender)",
+    "firewall": "host firewall (ufw, firewalld, nftables)",
+}
+
+
+def _agent_is_powerful(ctx: Context) -> bool:
+    """High blast-radius agent: it can execute/write/elevate on the host AND is
+    reachable by untrusted input. Used only to gate host-posture WARNs, so the
+    absence of host monitoring is flagged exactly when a compromise of *this*
+    agent would be consequential (and stays quiet for a sandboxed, low-reach one).
+    """
+    cfg = ctx.config
+    tools = _enabled_tools(cfg)
+    can_act = _hint(tools, ("exec", "shell", "fs_write", "deploy")) or "elevated" in tools
+    reachable = bool(_open_channels(cfg)) or _hint(tools, INPUT_TOOL_HINTS)
+    return can_act and reachable
+
+
+def _host_finding(cid: str, cls: str, ctx: Context) -> Finding:
+    label = _HOST_CLASS_LABEL[cls]
+    host = getattr(ctx, "host", None)
+    if not host or not host.get("supported"):
+        return _finding(
+            cid, UNKNOWN,
+            "Host monitor state not determined (host scan not run, or this OS / "
+            "path is not inspectable read-only).",
+            "Run ClawSecCheck on the agent's own host so it can inspect monitoring, "
+            "or confirm host monitoring manually.")
+    info = host.get("classes", {}).get(cls, {})
+    status = info.get("status")
+    found = [str(x) for x in (info.get("found") or [])]
+    active = info.get("active")
+
+    if status == "present":
+        names = ", ".join(found) if found else "a monitor"
+        state = "enabled" if active is True else ("installed" if active is False else "present")
+        return _finding(
+            cid, PASS,
+            f"Detected {names} on the host ({state}).",
+            "Keep it running and its rules current.",
+            evidence=found)
+
+    if status == "unknown":
+        return _finding(
+            cid, UNKNOWN,
+            f"Could not determine read-only whether {label} is present on this host.",
+            f"Verify manually whether {label} is active on the agent's machine.")
+
+    # status == "absent" — gate on agent blast-radius so we never cry wolf
+    if _agent_is_powerful(ctx):
+        return _finding(
+            cid, WARN,
+            f"No {label} detected, and this agent is high-privilege (it can act on "
+            "the host and is reachable by untrusted input). If it were compromised, "
+            "the activity could go unseen.",
+            f"Install/enable {label} on the host, or reduce the agent's blast radius "
+            "(sandbox it, lock channels to an allowlist, remove exec/write tools).")
+    return _finding(
+        cid, PASS,
+        f"No {label} detected, but this agent is low-privilege, so host-level "
+        "monitoring is less critical here.",
+        f"Consider {label} on the host if you later grant this agent exec/write "
+        "tools or open it to untrusted channels.")
+
+
+def check_host_network_ids(ctx: Context) -> Finding:
+    return _host_finding("B50", "network_ids", ctx)
+
+
+def check_host_audit(ctx: Context) -> Finding:
+    return _host_finding("B51", "host_audit", ctx)
+
+
+def check_host_file_integrity(ctx: Context) -> Finding:
+    return _host_finding("B52", "file_integrity", ctx)
+
+
+def check_host_edr(ctx: Context) -> Finding:
+    return _host_finding("B53", "edr_av", ctx)
+
+
+def check_host_firewall(ctx: Context) -> Finding:
+    return _host_finding("B54", "firewall", ctx)
+
+
 CHECKS = [
     check_trifecta, check_secrets, check_gateway, check_least_privilege,
     check_sandbox, check_supply_chain, check_bootstrap_injection,
@@ -3034,6 +3130,8 @@ CHECKS = [
     check_browser_ssrf, check_session_visibility,
     check_untrusted_context, check_known_vulns,
     check_credential_blast_radius, check_effective_tools,
+    check_host_network_ids, check_host_audit, check_host_file_integrity,
+    check_host_edr, check_host_firewall,
 ]
 
 
