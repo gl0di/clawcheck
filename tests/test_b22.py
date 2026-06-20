@@ -1,4 +1,10 @@
-"""B22 Self-modification risk tests."""
+"""B22 Self-modification risk tests.
+
+Approval gating uses the REAL OpenClaw field `tools.exec.mode` (deny/allowlist/
+ask/auto/full) via `_has_approval_gate`. The phantom fields tools.confirm /
+tools.requireApproval / tools.elevated.requireApproval do NOT exist and must not
+influence the result (regression for BLK-01).
+"""
 from pathlib import Path
 
 from clawseccheck.checks import check_self_modification
@@ -27,11 +33,16 @@ def _make_workspace(tmp_path, soul_mode=0o644, ws_mode=0o755, skills_mode=None):
     return ws
 
 
-def _cfg_with_tools(approval=None):
-    """Config with fs_write tool present."""
+def _cfg_with_tools(exec_mode=None, exec_security=None):
+    """Config with fs_write tool present; optional REAL approval gate fields."""
     cfg = {"tools": {"allow": ["fs_write", "shell"]}}
-    if approval is not None:
-        cfg["tools"]["requireApproval"] = approval
+    exec_cfg = {}
+    if exec_mode is not None:
+        exec_cfg["mode"] = exec_mode
+    if exec_security is not None:
+        exec_cfg["security"] = exec_security
+    if exec_cfg:
+        cfg["tools"]["exec"] = exec_cfg
     return cfg
 
 
@@ -76,33 +87,63 @@ def test_b22_world_writable_skills_dir_no_approval_fails(tmp_path):
     assert check_self_modification(c).status == "FAIL"
 
 
-# ---- WARN: tools + writable target + approval present ----
+# ---- WARN: tools + writable target + real approval gate (tools.exec.mode=ask) ----
 def test_b22_writable_with_approval_warns(tmp_path):
     _make_workspace(tmp_path, ws_mode=0o777)
-    c = _ctx(_cfg_with_tools(approval=True), home=str(tmp_path))
+    c = _ctx(_cfg_with_tools(exec_mode="ask"), home=str(tmp_path))
     assert check_self_modification(c).status == "WARN"
 
 
-# ---- WARN: elevated.requireApproval counts as approval ----
-def test_b22_elevated_approval_counts(tmp_path):
+# ---- WARN: tools.exec.security='ask' also counts as a real approval gate ----
+def test_b22_exec_security_ask_counts_as_approval(tmp_path):
     _make_workspace(tmp_path, ws_mode=0o777)
-    cfg = {"tools": {"allow": ["fs_write"], "elevated": {"requireApproval": True}}}
+    c = _ctx(_cfg_with_tools(exec_security="ask"), home=str(tmp_path))
+    assert check_self_modification(c).status == "WARN"
+
+
+# ---- tools.exec.mode='full' is NO gate -> FAIL ----
+def test_b22_exec_mode_full_no_gate_fails(tmp_path):
+    _make_workspace(tmp_path, ws_mode=0o777)
+    c = _ctx(_cfg_with_tools(exec_mode="full"), home=str(tmp_path))
+    assert check_self_modification(c).status == "FAIL"
+
+
+# ---- BLK-01 regression: phantom tools.requireApproval must NOT be read as a gate ----
+def test_b22_phantom_require_approval_field_is_ignored(tmp_path):
+    _make_workspace(tmp_path, ws_mode=0o777)
+    # A config that ONLY sets the non-existent field (no real exec.mode gate)
+    cfg = {"tools": {"allow": ["fs_write"], "requireApproval": True,
+                     "confirm": True, "elevated": {"requireApproval": True}}}
     c = _ctx(cfg, home=str(tmp_path))
-    assert check_self_modification(c).status == "WARN"
-
-
-# ---- approval=False must not suppress FAIL ----
-def test_b22_approval_false_still_fails(tmp_path):
-    _make_workspace(tmp_path, ws_mode=0o777)
-    c = _ctx(_cfg_with_tools(approval=False), home=str(tmp_path))
+    # Phantom fields confer no real gate -> must still FAIL
     assert check_self_modification(c).status == "FAIL"
 
 
-# ---- approval="never" must not suppress FAIL ----
-def test_b22_approval_never_still_fails(tmp_path):
+# ---- BLK-01 regression: real tools.exec.mode='ask' is honored (no false FAIL) ----
+def test_b22_uses_real_exec_approval_mode_ask(tmp_path):
     _make_workspace(tmp_path, ws_mode=0o777)
-    c = _ctx(_cfg_with_tools(approval="never"), home=str(tmp_path))
+    cfg = {"tools": {"allow": ["fs_write"], "exec": {"mode": "ask"}}}
+    c = _ctx(cfg, home=str(tmp_path))
+    assert check_self_modification(c).status == "WARN"  # gate detected, NOT FAIL
+
+
+# ---- BLK-01 regression: no real gate + self-modification path still FAILs ----
+def test_b22_no_approval_self_modification_fails(tmp_path):
+    _make_workspace(tmp_path, ws_mode=0o777)
+    cfg = {"tools": {"allow": ["fs_write"], "exec": {"mode": "full"}}}
+    c = _ctx(cfg, home=str(tmp_path))
     assert check_self_modification(c).status == "FAIL"
+
+
+# ---- BLK-01 regression: remediation text names REAL fields, not phantom ones ----
+def test_b22_remediation_mentions_real_fields(tmp_path):
+    _make_workspace(tmp_path, ws_mode=0o777)
+    c = _ctx(_cfg_with_tools(exec_mode="full"), home=str(tmp_path))
+    result = check_self_modification(c)
+    assert result.status == "FAIL"
+    assert "tools.exec" in result.fix
+    assert "requireApproval" not in result.fix
+    assert "tools.confirm" not in result.fix
 
 
 # ---- elevated tools trigger condition (a) ----

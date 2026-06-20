@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 
 from .catalog import CATALOG, CRITICAL, FAIL, HIGH, WARN, Finding
+from .report import _sanitize
 from .scoring import ScoreResult
 
 _SARIF_SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
@@ -74,7 +75,7 @@ def render_sarif(
         if f.status not in (FAIL, WARN):
             continue
         level = "error" if f.status == FAIL else "warning"
-        message_text = f.detail if f.detail else f.title
+        message_text = _sanitize(f.detail if f.detail else f.title)
         results.append(
             {
                 "ruleId": f.id,

@@ -252,9 +252,10 @@ The eight chains it detects (RISK-01 through RISK-08):
 | RISK-08 | MEDIUM | Multi-user channel → shared session (`dmScope="main"`) → cross-user data leak |
 
 Each chain fires **only when every link has positive evidence** — no chain is invented from
-absent or UNKNOWN data, so there are zero false-positives by design. The risk engine does not
-change the deterministic A–F score; it surfaces separately so you can see the worst-case
-paths at a glance without score inflation.
+absent or UNKNOWN data, so findings are evidence-gated, which keeps false positives low —
+but this is a heuristic audit, not a guarantee; manual review is still required. The risk
+engine does not change the deterministic A–F score; it surfaces separately so you can see
+the worst-case paths at a glance without score inflation.
 
 ```bash
 python3 audit.py --risk-paths       # print the highest-risk chains section only
@@ -383,6 +384,20 @@ all local-only:
 - **Shipped in v0.12:** Full Hebrew dynamic detail — finding "why"/evidence text with
   interpolated config values (paths, key names, counts) is now translated at render time via
   fragment-splitting + regex rules. The bilingual work begun in v0.9 is complete.
+
+## Limitations
+
+- **Heuristic local audit, not a formal proof of safety.** ClawSecCheck inspects
+  configuration text and known patterns; it cannot reason about all possible runtime
+  behaviours or formally verify your agent's security properties.
+- **Does not replace runtime red-teaming.** Static configuration analysis is a starting
+  point, not a substitute for adversarial testing against a running agent.
+- **May produce false positives and false negatives.** Evidence-gating keeps noise low,
+  but heuristics can miss novel attack patterns and can misread edge-case configurations.
+- **Read scope is bounded:** config file, bootstrap markdown files, and installed-skill
+  text — not an exhaustive scan of your filesystem.
+- **UNKNOWN is not PASS.** Unreadable files or unparseable configs are reported as
+  UNKNOWN and excluded from the score, never silently marked safe.
 
 ## Tests
 

@@ -7,8 +7,8 @@
   },
   "tools": {
     "profile": "minimal",
-    "elevated": { "allowFrom": ["owner-123"], "requireApproval": true },
-    "confirm": true
+    "exec": { "mode": "ask" },
+    "elevated": { "allowFrom": ["owner-123"] }
   },
   "sandbox": { "mode": "enabled", "network_mode": "bridge", "seccomp_profile": "default" },
   "plugins": {

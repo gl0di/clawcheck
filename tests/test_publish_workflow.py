@@ -1,0 +1,81 @@
+"""Tests for BLK-04 supply-chain fixes in the ClawHub publish workflow.
+
+Reads the YAML as plain text — no pyyaml dependency (stdlib only).
+"""
+from pathlib import Path
+
+WORKFLOW_PATH = (
+    Path(__file__).resolve().parents[1] / ".github" / "workflows" / "clawhub-publish.yml"
+)
+
+
+def _lines() -> list[str]:
+    return WORKFLOW_PATH.read_text(encoding="utf-8").splitlines()
+
+
+def test_publish_workflow_pins_clawhub() -> None:
+    """clawhub must be installed at an exact pinned version (clawhub@X.Y.Z).
+
+    A bare 'npm i -g clawhub' line (with no '@' version suffix) must not exist.
+    """
+    text = WORKFLOW_PATH.read_text(encoding="utf-8")
+    # The pinned form must be present.
+    assert "clawhub@" in text, (
+        "Expected 'clawhub@<version>' pin in workflow but found none."
+    )
+    # No bare unpinned install line (the pattern: contains 'npm' and 'clawhub'
+    # but lacks '@' on the same line as 'clawhub').
+    for line in _lines():
+        stripped = line.strip()
+        if "npm" in stripped and "clawhub" in stripped:
+            assert "@" in stripped, (
+                f"Found unpinned clawhub install line: {line!r}\n"
+                "Change it to 'npm i -g clawhub@<version>'."
+            )
+
+
+def test_publish_workflow_runs_smoke_before_publish() -> None:
+    """pytest and ruff check must both appear BEFORE the clawhub publish line."""
+    lines = _lines()
+
+    def first_index_containing(needle: str) -> int:
+        for i, line in enumerate(lines):
+            if needle in line:
+                return i
+        return -1
+
+    pytest_idx = first_index_containing("pytest")
+    ruff_idx = first_index_containing("ruff check")
+    publish_idx = first_index_containing("clawhub publish")
+
+    assert pytest_idx != -1, "No line containing 'pytest' found in workflow."
+    assert ruff_idx != -1, "No line containing 'ruff check' found in workflow."
+    assert publish_idx != -1, "No line containing 'clawhub publish' found in workflow."
+
+    assert pytest_idx < publish_idx, (
+        f"'pytest' (line {pytest_idx}) must appear before 'clawhub publish' "
+        f"(line {publish_idx})."
+    )
+    assert ruff_idx < publish_idx, (
+        f"'ruff check' (line {ruff_idx}) must appear before 'clawhub publish' "
+        f"(line {publish_idx})."
+    )
+
+
+def test_publish_workflow_has_environment_gate() -> None:
+    """The publish job must declare an 'environment:' field for the approval gate."""
+    text = WORKFLOW_PATH.read_text(encoding="utf-8")
+    assert "environment:" in text, (
+        "The publish job must declare 'environment:' to enable the manual-approval gate."
+    )
+
+
+def test_publish_workflow_does_not_echo_token() -> None:
+    """No line must both echo/cat a value and reference CLAWHUB_TOKEN."""
+    for line in _lines():
+        lower = line.lower()
+        references_token = "CLAWHUB_TOKEN" in line
+        echoes = any(cmd in lower for cmd in ("echo ", "cat "))
+        assert not (echoes and references_token), (
+            f"Line appears to echo/cat CLAWHUB_TOKEN (supply-chain risk): {line!r}"
+        )

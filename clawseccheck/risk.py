@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from .catalog import CRITICAL, FAIL, HIGH, MEDIUM, WARN, Finding
 from .checks import (
     _enabled_tools,
+    _has_approval_gate,
     _hint,
     _open_channels,
     SENSITIVE_TOOL_HINTS,
@@ -365,13 +366,8 @@ def _rule_self_modification(ctx: Context, findings: list[Finding],
         return None
     if not (_hint(tools, ("exec", "shell", "fs_write", "deploy")) or "elevated" in tools):
         return None
-    # Only fire when there is no approval gate
-    has_approval = (
-        dig(cfg, "tools.confirm")
-        or dig(cfg, "tools.requireApproval")
-        or dig(cfg, "tools.elevated.requireApproval")
-    )
-    if has_approval and has_approval not in (False, "off", "never"):
+    # Only fire when there is no approval gate (real OpenClaw field: tools.exec.mode)
+    if _has_approval_gate(cfg):
         return None
     return RiskPath(
         id="RISK-07",
@@ -390,8 +386,8 @@ def _rule_self_modification(ctx: Context, findings: list[Finding],
         fix=(
             "Run 'chmod 700 workspace/ && chmod 600 workspace/SOUL.md "
             "workspace/AGENTS.md workspace/TOOLS.md' to remove group/world "
-            "write access. Also add an approval gate: set tools.requireApproval "
-            "or tools.exec.security='ask' so every write action needs explicit "
+            "write access. Also add an approval gate: set tools.exec.mode='ask'/'allowlist' "
+            "(or tools.exec.security='ask') so every write action needs explicit "
             "human sign-off."
         ),
     )

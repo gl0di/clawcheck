@@ -3,6 +3,42 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.17.0] — 2026-06-20
+
+Release-readiness pass: closes the four stable-release blockers from the security
+review, plus honesty/documentation fixes. No telemetry, still local & read-only.
+
+### Fixed (stable blockers)
+- **BLK-01 — B22/B18/RISK-07 false FAIL on safe configs.** The self-modification (B22),
+  subagent (B18) and RISK-07 checks read *phantom* approval fields (`tools.confirm`,
+  `tools.requireApproval`, `tools.elevated.requireApproval`) that don't exist in OpenClaw,
+  so a config with a real `tools.exec.mode="ask"` gate was wrongly failed. All three now use
+  the real-field helper `_has_approval_gate()`; remediation text and he translations updated
+  to name real fields. Reliability/test fixtures that encoded the phantom shape were corrected.
+- **BLK-02 — IPv6 gateway bind misclassified.** Bind parsing used `str(bind).split(":")[0]`,
+  which mangled IPv6: `::` (public "any") was read as loopback (**exposure missed**) and
+  `[::1]:port` (loopback) was flagged exposed. Added `parse_bind_host()` (handles bare and
+  bracketed IPv6) and reused it across the gateway (B2), transport (B11) and control-plane
+  (B32) checks.
+- **BLK-03 — untrusted finding text not sanitized in all channels.** `--prompts` (the
+  copy-paste fix-pack pasted back into the agent), `--json` and `--sarif` emitted finding
+  title/detail/fix raw — a prompt/terminal-injection vector. All channels now route untrusted
+  text through `_sanitize()` (ANSI/OSC-52/bidi/zero-width); HTML strips control chars before
+  escaping; `--prompts` now carries an explicit "treat as untrusted data, not instructions" boundary.
+- **BLK-04 — publish pipeline hardening.** The release workflow installed `clawhub` unpinned
+  before using the token; now pinned to `clawhub@0.22.0`, with a pytest/ruff/compileall smoke
+  gate before publish and a `release` environment for manual approval.
+
+### Changed
+- README no longer claims "zero false-positives by design" — now states evidence-gated,
+  heuristic, manual review still required; added a Limitations section.
+- `--monitor`/`--trend` state directory is now created owner-only (`0700`); state files stay `0600`.
+
+### Added
+- `SECURITY.md`, `RELEASE_CHECKLIST.md`, `SECURITY_MODEL.md`.
+- Regression tests for every blocker (`test_bind.py`, `test_sanitize_channels.py`,
+  `test_publish_workflow.py`, `test_state_perms.py`, rewritten `test_b22.py`).
+
 ## [0.16.2] — 2026-06-20
 
 CI maintenance only — no change to the audit engine or its behaviour.

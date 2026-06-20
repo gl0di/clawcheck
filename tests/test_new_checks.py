@@ -34,7 +34,7 @@ def test_b18_subagents_risky_no_approval_warns():
 
 def test_b18_subagents_risky_with_approval_passes():
     c = _ctx({"agents": {"subagents": {"maxConcurrent": 4}},
-              "tools": {"elevated": {"allowFrom": ["o"]}, "confirm": True}})
+              "tools": {"elevated": {"allowFrom": ["o"]}, "exec": {"mode": "ask"}}})
     assert check_subagents(c).status == "PASS"
 
 

@@ -864,9 +864,9 @@ PHRASES: dict[str, dict[str, str]] = {
         "he": "סוכני-משנה מוגדרים אך לא זוהו כלים מוגברים/exec — סיכון ההאצלה נמוך.",
     },
     # fix (UNKNOWN — subagents but no risky tools)
-    "If you later add elevated or exec tools, also add "
-    "tools.requireApproval to gate subagent actions.": {
-        "he": "אם תוסיף בעתיד כלים מוגברים או exec, הוסף גם tools.requireApproval לחסום פעולות סוכן-משנה.",
+    "If you later add elevated or exec tools, also set "
+    "tools.exec.mode to 'ask'/'allowlist' to gate subagent actions.": {
+        "he": "אם תוסיף בעתיד כלים מוגברים או exec, הגדר גם tools.exec.mode ל-'ask'/'allowlist' לחסום פעולות סוכן-משנה.",
     },
     # detail (PASS — subagents with approval)
     "Subagents can be spawned but elevated/exec actions require approval.": {
@@ -877,10 +877,10 @@ PHRASES: dict[str, dict[str, str]] = {
         "he": "השאר את שערי האישור מופעלים לכל הכלים הנגישים לסוכני-משנה.",
     },
     # fix (WARN — subagents without approval)
-    "Set tools.confirm or tools.requireApproval (or tools.elevated.requireApproval) "
+    "Set tools.exec.mode to 'ask'/'allowlist' (or tools.exec.security='ask') "
     "so subagent-triggered elevated/exec actions need explicit human sign-off.": {
         "he": (
-            "הגדר tools.confirm או tools.requireApproval (או tools.elevated.requireApproval) "
+            "הגדר tools.exec.mode ל-'ask'/'allowlist' (או tools.exec.security='ask') "
             "כך שפעולות מוגברות/exec שהופעלו על ידי סוכן-משנה דורשות אישור אנושי מפורש."
         ),
     },
@@ -1028,11 +1028,11 @@ PHRASES: dict[str, dict[str, str]] = {
     # fix (FAIL path)
     "Remove write access from group/other on identity and skill files "
     "(chmod 700 workspace/, chmod 600 workspace/SOUL.md, chmod 700 skills/). "
-    "Also add tools.requireApproval so any write action needs explicit sign-off.": {
+    "Also set tools.exec.mode to 'ask'/'allowlist' so any write action needs explicit sign-off.": {
         "he": (
             "הסר גישת כתיבה מקבוצה/אחרים על קבצי זהות ומיומנות "
             "(chmod 700 workspace/, chmod 600 workspace/SOUL.md, chmod 700 skills/). "
-            "הוסף גם tools.requireApproval כך שכל פעולת כתיבה דורשת אישור מפורש."
+            "הגדר גם tools.exec.mode ל-'ask'/'allowlist' כך שכל פעולת כתיבה דורשת אישור מפורש."
         ),
     },
     "Keep approval gating enabled; also tighten identity/skill file permissions to "
@@ -1062,11 +1062,11 @@ PHRASES: dict[str, dict[str, str]] = {
     },
     # fix (FAIL path)
     "Remove the bypass directive(s) from SOUL.md/AGENTS.md/TOOLS.md and "
-    "ensure tools.confirm or tools.requireApproval is set for all "
+    "ensure tools.exec.mode is 'ask' or 'allowlist' for all "
     "destructive/outbound actions.": {
         "he": (
             "הסר את הנחיות העקיפה מ-SOUL.md/AGENTS.md/TOOLS.md "
-            "וודא ש-tools.confirm או tools.requireApproval מוגדרים לכל "
+            "וודא ש-tools.exec.mode הוא 'ask' או 'allowlist' לכל "
             "הפעולות ההרסניות/היוצאות."
         ),
     },

@@ -7,8 +7,8 @@
   },
   "tools": {
     "profile": "minimal",
-    "elevated": { "allowFrom": ["owner-uid-7f3a"], "requireApproval": true },
-    "confirm": true
+    "exec": { "mode": "ask" },
+    "elevated": { "allowFrom": ["owner-uid-7f3a"] }
   },
   "sandbox": {
     "mode": "enabled",

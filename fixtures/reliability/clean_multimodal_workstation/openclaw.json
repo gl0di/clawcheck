@@ -7,7 +7,7 @@
   },
   "tools": {
     "profile": "minimal",
-    "confirm": true
+    "exec": { "mode": "ask" }
   },
   "sandbox": {
     "mode": "enabled",

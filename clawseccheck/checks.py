@@ -34,6 +34,39 @@ def _perms_loose(ctx: Context) -> bool:
 
 LOOPBACK = {"127.0.0.1", "localhost", "::1", "", "loopback", "local"}
 EXPOSED_BINDS = {"0.0.0.0", "::", "all", "public", "*"}
+
+
+def parse_bind_host(value) -> str:
+    """Extract the host portion from a gateway.bind value, handling IPv6 correctly.
+
+    Examples::
+        "127.0.0.1:8080" -> "127.0.0.1"
+        "[::1]:8765"      -> "::1"
+        "::"              -> "::"
+        "[::]"            -> "::"
+        "0.0.0.0"         -> "0.0.0.0"
+        ""                -> ""
+    """
+    s = str(value or "").strip().lower()
+    if not s:
+        return ""
+    # Bracketed IPv6 with optional port: [::1]:port or [::]
+    if s.startswith("["):
+        end = s.find("]")
+        if end != -1:
+            return s[1:end]  # strip [..] -> e.g. "::1" or "::"
+    # Bare wildcard / known special values without colons
+    if s in {"::", "0.0.0.0", "*"}:
+        return s
+    # host:port (IPv4 or hostname) — exactly one colon
+    if s.count(":") == 1:
+        return s.split(":", 1)[0]
+    # Bare IPv6 address with multiple colons (no brackets, no port)
+    if ":" in s:
+        return s
+    return s
+
+
 SECRET_KEY_RE = re.compile(r"(password|secret|token|api[_-]?key|apikey|bottoken)", re.I)
 SECRET_PATTERNS = [
     re.compile(r"sk-ant-[a-z0-9-]{8,}", re.I),
@@ -220,7 +253,7 @@ def check_secrets(ctx: Context) -> Finding:
 def check_gateway(ctx: Context) -> Finding:
     cfg = ctx.config
     ev = []
-    bind = str(dig(cfg, "gateway.bind", "")).split(":")[0]
+    bind = parse_bind_host(dig(cfg, "gateway.bind", ""))
     auth = dig(cfg, "gateway.auth.mode")
     if bind and bind not in LOOPBACK and auth in (None, "none"):
         ev.append(f"gateway.bind={bind or '?'} exposed with auth.mode={auth}")
@@ -461,7 +494,7 @@ def check_audit_log(ctx: Context) -> Finding:
 
 def check_tls(ctx: Context) -> Finding:
     cfg = ctx.config
-    bind = str(dig(cfg, "gateway.bind", "")).split(":")[0].lower()
+    bind = parse_bind_host(dig(cfg, "gateway.bind", ""))
     # Real path: gateway.tls.enabled (bool, default false)
     # gateway.tls as a bare boolean and gateway.https do NOT exist in OpenClaw schema
     tls = dig(cfg, "gateway.tls.enabled")
@@ -1403,15 +1436,10 @@ def check_subagents(ctx: Context) -> Finding:
         return _finding("B18", UNKNOWN,
                         "Subagents configured but no elevated/exec tools detected — "
                         "delegation risk is low.",
-                        "If you later add elevated or exec tools, also add "
-                        "tools.requireApproval to gate subagent actions.")
+                        "If you later add elevated or exec tools, also set "
+                        "tools.exec.mode to 'ask'/'allowlist' to gate subagent actions.")
 
-    approval = (
-        dig(cfg, "tools.confirm")
-        or dig(cfg, "tools.requireApproval")
-        or dig(cfg, "tools.elevated.requireApproval")
-    )
-    if approval and approval not in (False, "off", "never"):
+    if _has_approval_gate(cfg):
         return _finding("B18", PASS,
                         "Subagents can be spawned but elevated/exec actions require approval.",
                         "Keep approval gating enabled for all subagent-accessible tools.")
@@ -1420,7 +1448,7 @@ def check_subagents(ctx: Context) -> Finding:
         "B18", WARN,
         "Subagents can be spawned and may inherit elevated/exec tools without "
         "human approval.",
-        "Set tools.confirm or tools.requireApproval (or tools.elevated.requireApproval) "
+        "Set tools.exec.mode to 'ask'/'allowlist' (or tools.exec.security='ask') "
         "so subagent-triggered elevated/exec actions need explicit human sign-off.",
     )
 
@@ -1710,13 +1738,8 @@ def check_self_modification(ctx: Context) -> Finding:
             "Verify workspace SOUL.md and skills dirs are chmod 700/600.",
         )
 
-    # Condition (c): approval gate
-    approval = (
-        dig(cfg, "tools.confirm")
-        or dig(cfg, "tools.requireApproval")
-        or dig(cfg, "tools.elevated.requireApproval")
-    )
-    has_approval = approval and approval not in (False, "off", "never")
+    # Condition (c): approval gate (real OpenClaw field: tools.exec.mode/security/ask)
+    has_approval = _has_approval_gate(cfg)
 
     joined = "; ".join(writable[:6])
     extra = f" (+{len(writable) - 6} more)" if len(writable) > 6 else ""
@@ -1740,7 +1763,7 @@ def check_self_modification(ctx: Context) -> Finding:
         f"group/world-writable: {joined}{extra}",
         "Remove write access from group/other on identity and skill files "
         "(chmod 700 workspace/, chmod 600 workspace/SOUL.md, chmod 700 skills/). "
-        "Also add tools.requireApproval so any write action needs explicit sign-off.",
+        "Also set tools.exec.mode to 'ask'/'allowlist' so any write action needs explicit sign-off.",
         evidence=writable,
     )
 
@@ -1969,7 +1992,7 @@ def check_approval_bypass(ctx: Context) -> Finding:
             f"tools are enabled — the agent may act without human sign-off: "
             f"{directive_summary}",
             "Remove the bypass directive(s) from SOUL.md/AGENTS.md/TOOLS.md and "
-            "ensure tools.confirm or tools.requireApproval is set for all "
+            "ensure tools.exec.mode is 'ask' or 'allowlist' for all "
             "destructive/outbound actions.",
             evidence=ev,
         )
@@ -2356,7 +2379,7 @@ def check_control_plane_mutation(ctx: Context) -> Finding:
         )
 
     # WARN: gateway is network-exposed and control-plane tools are not denied
-    bind = str(gw.get("bind", "")).split(":")[0].lower()
+    bind = parse_bind_host(gw.get("bind", ""))
     auth_mode = dig(cfg, "gateway.auth.mode")
     is_exposed = (
         (bind and bind not in LOOPBACK and bind not in {"", "loopback"})

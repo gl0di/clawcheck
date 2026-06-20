@@ -310,8 +310,9 @@ def test_risk07_with_approval_no_fire():
         status=FAIL, detail="test", fix="test",
         framework="Write Integrity", scored=True,
     )
+    # Real approval gate (tools.exec.security='ask') — RISK-07 must not fire.
     cfg = {
-        "tools": {"exec": {"security": "full"}, "requireApproval": True},
+        "tools": {"exec": {"security": "ask"}},
     }
     ctx = _ctx(cfg)
     f = _findings(ctx) + [fake_b20]

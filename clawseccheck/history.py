@@ -30,6 +30,10 @@ def record(score, path: str = DEFAULT_HISTORY, when: str | None = None) -> None:
 
     p = Path(path).expanduser()
     p.parent.mkdir(parents=True, exist_ok=True)
+    try:  # owner-only directory: history dir must not be world-readable (POSIX only)
+        p.parent.chmod(0o700)
+    except (OSError, NotImplementedError):
+        pass
 
     row = {"date": when, "score": int(score.score), "grade": str(score.grade)}
     with p.open("a", encoding="utf-8") as fh:
