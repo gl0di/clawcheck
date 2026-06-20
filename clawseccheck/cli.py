@@ -146,12 +146,22 @@ def main(argv=None) -> int:
         return 0
 
     if args.vet:
+        from .report import _sanitize
         f = vet_skill(args.vet)
         verdict = {"FAIL": "DANGEROUS", "WARN": "SUSPICIOUS", "PASS": "looks SAFE",
                    "UNKNOWN": "could not assess"}[f.status]
         icon = {"FAIL": "[X]", "WARN": "[!]", "PASS": "[OK]", "UNKNOWN": "[?]"}[f.status] \
             if ascii_only else {"FAIL": "⛔", "WARN": "⚠️", "PASS": "✅", "UNKNOWN": "❔"}[f.status]
-        _emit(f"{icon} Vetting '{args.vet}': {verdict} [{f.severity}]\n    {f.detail}\n    {f.fix}")
+        lines = [f"{icon} Vetting '{args.vet}': {verdict} [{f.severity}]", f"    {f.detail}"]
+        if f.evidence:
+            bullet = "*" if ascii_only else "•"
+            lines.append("    Evidence:")
+            for ev in f.evidence[:12]:
+                lines.append(f"      {bullet} {_sanitize(ev)}")
+            if len(f.evidence) > 12:
+                lines.append(f"      {bullet} (+{len(f.evidence) - 12} more)")
+        lines.append(f"    {f.fix}")
+        _emit("\n".join(lines))
         return 0 if f.status in ("PASS", "UNKNOWN") else 1
 
     if args.vet_mcp is not None:

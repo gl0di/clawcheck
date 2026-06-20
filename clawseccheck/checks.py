@@ -15,7 +15,8 @@ import shutil
 from pathlib import Path
 
 from .catalog import BY_ID, CRITICAL, FAIL, HIGH, LOW, MEDIUM, PASS, UNKNOWN, WARN, Finding
-from .collector import _OWN_SKILL_NAMES, Context, _read_skill_text, dig
+from .collector import _OWN_SKILL_NAMES, Context, _read_skill_text, dig, read_skill_python
+from .skillast import analyze_python
 
 
 def _is_posix() -> bool:
@@ -635,6 +636,28 @@ _SKILL_HIGH = [
     ("powershell download-and-exec",
      re.compile(r"(iwr|invoke-webrequest)\b[^\n|]{0,200}\|\s*iex|Invoke-Expression", re.I)),
 ]
+# Prompt-injection / approval-bypass directives embedded in a THIRD-PARTY skill's prose
+# (the SkillSpector P1-P8 class). Distinct from B6, which scans the user's OWN bootstrap.
+# A skill that tells the agent to ignore its instructions, hide actions from the user, or
+# exfiltrate secrets warrants review (HIGH). Deliberately narrow: these match agent-
+# MANIPULATION phrasing, NOT ordinary setup prose (a skill reading its own `.env` or
+# curling a reputable installer must stay clean — see the zero-false-positive law).
+# Genuine malware co-located with these still scores CRITICAL via _SKILL_CRIT / cred-exfil.
+_SKILL_INJECTION = [
+    ("ignore-instructions directive",
+     re.compile(r"ignore\s+(all\s+)?(your\s+|the\s+)?previous\s+instructions|"
+                r"disregard\s+(your\s+)?(system\s+)?(prompt|instructions)|"
+                r"forget\s+(all\s+)?(your\s+)?(previous\s+)?instructions", re.I)),
+    ("exfiltration directive",
+     re.compile(r"\bexfiltrate\b|"
+                r"(send|upload|leak|email)\s+[^\n]{0,40}(secret|token|api[_-]?key|credential|"
+                r"password|private\s+key)s?\s+to\b", re.I)),
+    ("hide-from-user directive",
+     re.compile(r"do\s+not\s+(tell|inform|notify|alert)\s+the\s+user|"
+                r"without\s+(telling|notifying|informing)\s+the\s+user|"
+                r"bypass\s+the\s+(confirmation|approval)\s+(prompt|step|dialog)|"
+                r"don'?t\s+ask\s+(the\s+user\s+)?for\s+(permission|confirmation|approval)", re.I)),
+]
 # `curl URL | sh` is how uv/rustup/brew/deno legitimately install — only suspicious when the
 # host is NOT a well-known installer domain.
 _REPUTABLE_INSTALL_HOSTS = (
@@ -789,6 +812,24 @@ def check_installed_skills(ctx: Context) -> Finding:
         # rule above. This is at least HIGH — the combination is suspicious.
         if not _has_cred_exfil(blob) and _has_cred_exfil_cross_skill(blob):
             high.append(f"{name}: credential path and exfil sink both present in skill (split-stage risk)")
+        # Prompt-injection / approval-bypass directives in the skill's prose (P1-P8 class).
+        # HIGH only — co-located real malware (paste-host / cred-exfil) raises the verdict
+        # to CRITICAL on its own via _SKILL_CRIT, so we don't double-escalate on bare curl.
+        for label, rx in _SKILL_INJECTION:
+            if rx.search(blob):
+                high.append(f"{name}: injection directive — {label}")
+        # AST analysis of the skill's Python files — catches obfuscation regex misses.
+        # crit rules (obfuscated exec, getattr/import indirection) FAIL on their own;
+        # info rules (plain shell sinks, deserialization) escalate only alongside a
+        # credential/exfil signal, so a skill that merely uses subprocess is never failed.
+        cred_exfil_signal = _has_cred_exfil(blob) or _has_cred_exfil_cross_skill(blob)
+        for relpath, src in ctx.installed_skill_py.get(name, []):
+            for af in analyze_python(src, relpath):
+                loc = f"{relpath}:{af.lineno}"
+                if af.severity == "crit":
+                    crit.append(f"{name}: {af.reason} ({loc})")
+                elif cred_exfil_signal:
+                    high.append(f"{name}: {af.reason} ({loc})")
     n = len(skills)
     if crit:
         extra = f" (+{len(crit) - 6} more)" if len(crit) > 6 else ""
@@ -850,16 +891,19 @@ def vet_skill(path: str | Path) -> Finding:
                            "Point --vet at third-party skills you're about to install, not at the "
                            "scanner itself.")
         text, name = _read_skill_text(p), p.name
+        py_sources = read_skill_python(p)
     elif p.is_file():
         try:
             text = p.read_text(encoding="utf-8", errors="replace")
         except OSError as exc:
             return _custom("B13", HIGH, UNKNOWN, f"could not read {p}: {exc}", "—")
         name = p.parent.name or p.stem
+        py_sources = [(p.name, text)] if p.suffix == ".py" else []
     else:
         return _custom("B13", HIGH, UNKNOWN, f"no skill found at {p}", "Point --vet at a skill dir or SKILL.md.")
     ctx = Context(home=p)
     ctx.installed_skills = {name or "skill": text}
+    ctx.installed_skill_py = {name or "skill": py_sources}
     return check_installed_skills(ctx)
 
 

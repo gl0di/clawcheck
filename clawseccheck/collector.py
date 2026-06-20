@@ -29,6 +29,7 @@ _MAX_SKILLS = 300
 _MAX_BYTES_PER_SKILL = 60_000
 _MAX_FILE_BYTES = 200_000
 _MAX_FILES_PER_SKILL = 500
+_MAX_PY_BYTES_PER_SKILL = 200_000  # cap on Python source kept per skill for AST analysis
 
 _COMMENT_RE = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 _TRAILING_COMMA_RE = re.compile(r",(\s*[}\]])")
@@ -54,6 +55,7 @@ class Context:
     native: object = None                           # NativeResult from openclaw security audit
     host: object = None                             # hostwatch.detect() result; set by audit(include_host=True)
     installed_skills: dict = field(default_factory=dict)  # skill name -> concatenated text
+    installed_skill_py: dict = field(default_factory=dict)  # skill name -> [(relpath, source)] for AST
 
     @property
     def bootstrap_blob(self) -> str:
@@ -94,6 +96,42 @@ def _read_skill_text(skill_dir: Path) -> str:
     return "\n".join(parts)
 
 
+def read_skill_python(skill_dir: Path) -> list[tuple[str, str]]:
+    """Collect the Python source files of one skill for read-only AST analysis.
+
+    Returns a list of (relative-path, source) pairs, bounded by the same caps and
+    symlink/escape guards as _read_skill_text — never executes anything.
+    """
+    out: list[tuple[str, str]] = []
+    total, file_count = 0, 0
+    try:
+        root = skill_dir.resolve()
+    except OSError:
+        return out
+    for f in sorted(skill_dir.rglob("*.py")):
+        if total >= _MAX_PY_BYTES_PER_SKILL or file_count >= _MAX_FILES_PER_SKILL:
+            break
+        if f.is_symlink() or not f.is_file():
+            continue
+        try:
+            real = f.resolve()
+            if root != real and root not in real.parents:  # escaped the skill dir
+                continue
+            if f.stat().st_size > _MAX_FILE_BYTES:
+                continue
+            text = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        try:
+            rel = str(f.relative_to(skill_dir))
+        except ValueError:
+            rel = f.name
+        out.append((rel, text))
+        total += len(text)
+        file_count += 1
+    return out
+
+
 def _read_installed_skills(home: Path, ctx: Context) -> None:
     seen = set()
     for rel in SKILL_DIRS:
@@ -113,6 +151,7 @@ def _read_installed_skills(home: Path, ctx: Context) -> None:
             seen.add(key)
             try:
                 ctx.installed_skills[key] = _read_skill_text(sd)
+                ctx.installed_skill_py[key] = read_skill_python(sd)
             except OSError as exc:
                 ctx.errors.append(f"could not read skill {key}: {exc}")
 

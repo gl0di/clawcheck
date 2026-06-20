@@ -3,6 +3,35 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.21.0] — 2026-06-20
+
+**Deeper skill vetting (AST + injection directives).** Inspired by a grounded comparison with
+NVIDIA SkillSpector (Apache-2.0), `--vet` / B13 gained a static **Python AST** layer that catches
+the obfuscation class pure regex misses — while keeping zero false-positive FAILs on real configs.
+
+### Added
+- **AST analysis of a skill's Python files** (`clawseccheck/skillast.py`, stdlib `ast`, **parse only
+  — never compile/exec**). High-confidence (FAIL-eligible) detections: obfuscated `exec`/`eval` of a
+  decoded string, `getattr(...)()` indirection to a dynamic/dangerous attribute, and
+  `__import__("os").system(...)`-style dynamic-import execution. Informational sinks
+  (`subprocess.*`, `os.system`, `pickle/marshal.loads`) escalate **only** alongside a credential/
+  exfil signal — a skill that merely uses subprocess is never failed.
+- **Injection-directive scan inside a vetted skill** (`_SKILL_INJECTION`): agent-manipulation prose
+  (ignore-previous-instructions, exfiltrate-secrets, hide-from-user). HIGH; deliberately narrow so
+  ordinary setup prose (reading a skill's own `.env`, curling a reputable installer) stays clean.
+  Complements B6, which scans the user's *own* bootstrap.
+- **Richer `--vet` output**: the verdict now prints the `file:line — reason` evidence list (it was
+  previously suppressed in plain-text output).
+- `docs/research/skillspector-comparison.md` — what was adopted from SkillSpector and what was
+  **not** (YARA, live OSV.dev CVE, LLM semantic analysis — each excluded by our local-only / zero-
+  network / stdlib-only laws), with attribution. No SkillSpector code was copied.
+
+### Notes
+- AST coverage is **Python-only**; JS/shell/other skill files remain on the regex engine.
+- Taint/dataflow tracking is deferred to 0.22.0 (FP-delicate; needs conservative gating).
+- Verified zero new false-positive FAILs across the real fleet configs; the AST layer runs in both
+  `--vet` and the default-audit B13 (over installed skills).
+
 ## [0.20.0] — 2026-06-20
 
 **Host Watch Posture** — ClawSecCheck now widens the lens by one ring: beyond the *agent's*

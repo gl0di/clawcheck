@@ -72,7 +72,11 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
   plugin/skill supply-chain integrity, bootstrap-file injection surface, memory poisoning,
   human approval, secret-leak/redaction, TLS, local-first/model hygiene.
 - **B13 — installed-skill / plugin vetting:** scans the *content* of skills you downloaded
-  (not made yourself) for the ClawHavoc malware class, including base64-hidden payloads.
+  (not made yourself) for the ClawHavoc malware class, including base64-hidden payloads. As of
+  v0.21 it also runs a static **Python AST** pass (stdlib `ast`, parse-only — never executed) that
+  catches obfuscation regex misses — `exec(base64.b64decode(...))`, `getattr(os,"sys"+"tem")(...)`,
+  `__import__("os").system(...)` — plus prompt-injection / hide-from-user directives embedded in a
+  third-party skill's prose. (AST is Python-only; JS/shell stay on the regex engine.)
 - **B14 — egress surface:** where the agent can reach out (channels, external skills, tools).
 - **B15 — MCP server trust** boundaries.
 - **B16 — threat monitoring:** whether you actually have monitoring/detection set up at all.
@@ -371,7 +375,7 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Status
 
-v0.20. Read-only checks A1/B1–B26/B30/B31/B32/B33/B38/B39/B41/B50–B54/C3–C5 (incl. write-protection,
+v0.21. Read-only checks A1/B1–B26/B30/B31/B32/B33/B38/B39/B41/B50–B54/C3–C5 (incl. write-protection,
 self-modification, approval-bypass, deep MCP, update/pinning hygiene, sender identity strength,
 control-plane mutation reachability, browser/SSRF exposure, session visibility/cross-user leak, and a
 **Host Watch Posture** ring — is the machine the agent runs on watched at all: network IDS, host
