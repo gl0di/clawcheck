@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from clawcheck import audit
-from clawcheck.catalog import FAIL, PASS, UNKNOWN
+from clawseccheck import audit
+from clawseccheck.catalog import FAIL, PASS, UNKNOWN
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -72,8 +72,8 @@ def test_loopback_keyword_bind_is_not_flagged():
     # real OpenClaw uses bind keyword "loopback", not an IP
     import json
 
-    from clawcheck import run_all
-    from clawcheck.collector import Context
+    from clawseccheck import run_all
+    from clawseccheck.collector import Context
     ctx = Context(home=Path("/nonexistent"))
     ctx.config = json.loads('{"gateway":{"bind":"loopback","auth":{"mode":"token",'
                             '"token":"a-very-long-token-1234567890"}}}')

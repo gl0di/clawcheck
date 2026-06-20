@@ -1,4 +1,4 @@
-"""Tests for dynamic detail/evidence translation in clawcheck/i18n.py.
+"""Tests for dynamic detail/evidence translation in clawseccheck/i18n.py.
 
 Verifies:
 - Every DETAIL_RULES pattern compiles and fullmatches at least one realistic
@@ -19,9 +19,9 @@ from pathlib import Path
 
 import pytest
 
-from clawcheck import audit
-from clawcheck.i18n import DETAIL_RULES, tp
-from clawcheck.report import render_report
+from clawseccheck import audit
+from clawseccheck.i18n import DETAIL_RULES, tp
+from clawseccheck.report import render_report
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 

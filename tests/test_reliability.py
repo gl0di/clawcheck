@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from clawcheck import audit
-from clawcheck.catalog import FAIL
+from clawseccheck import audit
+from clawseccheck.catalog import FAIL
 
 RELIABILITY = Path(__file__).resolve().parent.parent / "fixtures" / "reliability"
 

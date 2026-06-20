@@ -1,8 +1,8 @@
 """B22 Self-modification risk tests."""
 from pathlib import Path
 
-from clawcheck.checks import check_self_modification
-from clawcheck.collector import Context
+from clawseccheck.checks import check_self_modification
+from clawseccheck.collector import Context
 
 
 def _ctx(cfg=None, home="/x"):
@@ -122,7 +122,7 @@ def test_b22_no_workspace_is_unknown(tmp_path):
 # ---- Windows (non-POSIX) -> UNKNOWN ----
 def test_b22_windows_is_unknown(monkeypatch, tmp_path):
     _make_workspace(tmp_path, ws_mode=0o777)
-    from clawcheck import checks
+    from clawseccheck import checks
     monkeypatch.setattr(checks, "_is_posix", lambda: False)
     c = _ctx(_cfg_with_tools(), home=str(tmp_path))
     assert check_self_modification(c).status == "UNKNOWN"

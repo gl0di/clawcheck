@@ -2,11 +2,11 @@
 import json
 import subprocess
 
-from clawcheck import native
-from clawcheck.catalog import CRITICAL, FAIL, HIGH, LOW, MEDIUM
-from clawcheck.native import NativeResult, run_native_audit
-from clawcheck.report import render_report
-from clawcheck.scoring import compute
+from clawseccheck import native
+from clawseccheck.catalog import CRITICAL, FAIL, HIGH, LOW, MEDIUM
+from clawseccheck.native import NativeResult, run_native_audit
+from clawseccheck.report import render_report
+from clawseccheck.scoring import compute
 
 
 def _mock(monkeypatch, stdout, exe="/usr/bin/openclaw", recorder=None):

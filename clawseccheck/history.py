@@ -2,7 +2,7 @@
 
 This module is the ONLY writer of history records. record() is never called
 automatically — only when an explicit caller (CLI --trend/--monitor) invokes it,
-preserving ClawCheck's "writes nothing by default" promise.
+preserving ClawSecCheck's "writes nothing by default" promise.
 """
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-DEFAULT_HISTORY = "~/.clawcheck/history.jsonl"
+DEFAULT_HISTORY = "~/.clawseccheck/history.jsonl"
 
 
 def record(score, path: str = DEFAULT_HISTORY, when: str | None = None) -> None:
@@ -92,7 +92,7 @@ def render_trend(rows: list[dict], ascii_only: bool = False) -> str:
     else:
         arrow_up, arrow_down, arrow_flat = "▲", "▼", "·"
 
-    lines = ["ClawCheck - Score Trend", ""]
+    lines = ["ClawSecCheck - Score Trend", ""]
     for i, row in enumerate(rows):
         if i == 0:
             arrow = arrow_flat

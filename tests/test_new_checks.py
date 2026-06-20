@@ -1,8 +1,8 @@
 """B17 autonomy/heartbeat, B18 subagents, B19 data-at-rest."""
 from pathlib import Path
 
-from clawcheck.checks import check_autonomy, check_data_atrest, check_subagents
-from clawcheck.collector import Context
+from clawseccheck.checks import check_autonomy, check_data_atrest, check_subagents
+from clawseccheck.collector import Context
 
 
 def _ctx(cfg=None, bootstrap=None, home="/x"):
@@ -66,6 +66,6 @@ def test_b19_no_dirs_unknown(tmp_path):
 
 
 def test_b19_windows_is_unknown(monkeypatch, tmp_path):
-    from clawcheck import checks
+    from clawseccheck import checks
     monkeypatch.setattr(checks, "_is_posix", lambda: False)
     assert check_data_atrest(_ctx({}, home=str(tmp_path))).status == "UNKNOWN"

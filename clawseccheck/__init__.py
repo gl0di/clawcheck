@@ -1,7 +1,7 @@
-"""ClawCheck — OpenClaw security self-audit engine (read-only, stdlib-only).
+"""ClawSecCheck — OpenClaw security self-audit engine (read-only, stdlib-only).
 
 The local checks are offline and never shell out. Optionally (`include_native`)
-ClawCheck also runs the user's own `openclaw security audit` and surfaces those
+ClawSecCheck also runs the user's own `openclaw security audit` and surfaces those
 findings too — the single, fixed, read-only external command it can run.
 """
 from __future__ import annotations
@@ -26,7 +26,7 @@ from .sarif import render_sarif
 from .history import load as history_load, record as history_record, render_trend, DEFAULT_HISTORY
 from .guide import suggest_actions, render_next_actions
 
-__version__ = "0.15.3"
+__version__ = "0.16.0"
 
 
 def audit(home: Path | str = "~/.openclaw", include_native: bool = False,

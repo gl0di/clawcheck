@@ -6,8 +6,8 @@ nothing determinable.
 """
 from pathlib import Path
 
-from clawcheck.checks import check_update_pinning
-from clawcheck.collector import Context
+from clawseccheck.checks import check_update_pinning
+from clawseccheck.collector import Context
 
 
 def _ctx(cfg: dict) -> Context:

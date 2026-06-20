@@ -1,4 +1,4 @@
-"""Tests for clawcheck/logsafe.py.
+"""Tests for clawseccheck/logsafe.py.
 
 All tests are offline and read-only (no network, no persistent writes beyond
 a pytest tmp_path which is cleaned up automatically).
@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import os
 
-from clawcheck.logsafe import get_logger, redact
+from clawseccheck.logsafe import get_logger, redact
 
 
 # ---------------------------------------------------------------------------
@@ -100,10 +100,10 @@ class TestRedact:
 
 
 class TestGetLogger:
-    def test_returns_logger_named_clawcheck(self):
+    def test_returns_logger_named_clawseccheck(self):
         logger = get_logger()
         assert isinstance(logger, logging.Logger)
-        assert logger.name == "clawcheck"
+        assert logger.name == "clawseccheck"
 
     def test_debug_flag_sets_debug_level(self):
         logger = get_logger(debug=True)
@@ -132,7 +132,7 @@ class TestGetLogger:
         assert len(logger.handlers) == 1
 
     def test_logfile_adds_file_handler(self, tmp_path):
-        log_path = str(tmp_path / "clawcheck.log")
+        log_path = str(tmp_path / "clawseccheck.log")
         logger = get_logger(debug=True, logfile=log_path)
         # stderr handler + file handler
         assert len(logger.handlers) == 2
@@ -172,9 +172,9 @@ class TestGetLogger:
     def test_logfile_expanduser_tilde(self, tmp_path, monkeypatch):
         # Patch HOME so ~ expands into our tmp dir
         monkeypatch.setenv("HOME", str(tmp_path))
-        log_path = "~/clawcheck_test.log"
+        log_path = "~/clawseccheck_test.log"
         logger = get_logger(debug=True, logfile=log_path)
         logger.debug("hello")
         for h in logger.handlers:
             h.flush()
-        assert (tmp_path / "clawcheck_test.log").exists()
+        assert (tmp_path / "clawseccheck_test.log").exists()

@@ -1,4 +1,4 @@
-"""Enable `python -m clawcheck`."""
+"""Enable `python -m clawseccheck`."""
 import sys
 
 from .cli import main

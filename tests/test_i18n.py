@@ -1,9 +1,9 @@
-"""Tests for clawcheck/i18n.py — pure stdlib i18n module."""
+"""Tests for clawseccheck/i18n.py — pure stdlib i18n module."""
 from __future__ import annotations
 
-from clawcheck.catalog import CATALOG
-from clawcheck.i18n import LANGS, RTL_LANGS, STRINGS, TITLES, PHRASES
-from clawcheck.i18n import is_rtl, t, title_for, tp
+from clawseccheck.catalog import CATALOG
+from clawseccheck.i18n import LANGS, RTL_LANGS, STRINGS, TITLES, PHRASES
+from clawseccheck.i18n import is_rtl, t, title_for, tp
 
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ class TestIsRtl:
 class TestTLookup:
     def test_en_returns_en_value(self):
         result = t("report.title", lang="en")
-        assert result == "ClawCheck - OpenClaw Security Audit"
+        assert result == "ClawSecCheck - OpenClaw Security Audit"
 
     def test_he_returns_nonempty_string(self):
         result = t("report.title", lang="he")
@@ -65,7 +65,7 @@ class TestTLookup:
     def test_unknown_lang_falls_back_to_en(self):
         # An unknown language should fall back to English value
         result = t("report.title", lang="zz")
-        assert result == "ClawCheck - OpenClaw Security Audit"
+        assert result == "ClawSecCheck - OpenClaw Security Audit"
 
     def test_default_lang_is_en(self):
         assert t("report.title") == t("report.title", lang="en")
@@ -95,7 +95,7 @@ class TestTFormatting:
     def test_extra_placeholder_does_not_raise(self):
         # Extra kwargs are ignored by str.format — must not raise
         result = t("report.title", lang="en", extra="ignored")
-        assert result == "ClawCheck - OpenClaw Security Audit"
+        assert result == "ClawSecCheck - OpenClaw Security Audit"
 
     def test_partial_placeholder_does_not_raise(self):
         # Only some placeholders provided — must not raise, returns something
@@ -123,13 +123,13 @@ class TestStringsCompleteness:
 
     def test_en_strings_match_report_literals(self):
         """Spot-check a few en strings are byte-identical to report.py literals."""
-        assert STRINGS["report.title"]["en"] == "ClawCheck - OpenClaw Security Audit"
+        assert STRINGS["report.title"]["en"] == "ClawSecCheck - OpenClaw Security Audit"
         assert STRINGS["report.label_why"]["en"] == "why"
         assert STRINGS["report.label_fix"]["en"] == "fix"
         assert STRINGS["report.native_clean"]["en"] == "Clean — openclaw security audit found nothing."
         assert STRINGS["html.no_issues"]["en"] == "No issues found. Keep it that way."
-        assert STRINGS["html.h1"]["en"] == "🔍 ClawCheck Security Audit Report"
-        assert STRINGS["html.title"]["en"] == "ClawCheck Security Audit Report"
+        assert STRINGS["html.h1"]["en"] == "🔍 ClawSecCheck Security Audit Report"
+        assert STRINGS["html.title"]["en"] == "ClawSecCheck Security Audit Report"
         assert STRINGS["html.label_score"]["en"] == "Score:"
         assert STRINGS["html.label_trifecta"]["en"] == "Lethal Trifecta:"
         assert STRINGS["html.label_capped"]["en"] == "Capped:"
@@ -140,10 +140,10 @@ class TestStringsCompleteness:
         assert STRINGS["report.native_header"]["en"] == "--- Also from OpenClaw's built-in `security audit` ---"
         assert STRINGS["card.security_label"]["en"] == "OpenClaw Security"
         assert STRINGS["card.trifecta_label"]["en"] == "Lethal Trifecta"
-        assert STRINGS["card.audited_by"]["en"] == "audited by ClawCheck"
-        assert STRINGS["monitor.title"]["en"] == "ClawCheck - Threat Monitor"
+        assert STRINGS["card.audited_by"]["en"] == "audited by ClawSecCheck"
+        assert STRINGS["monitor.title"]["en"] == "ClawSecCheck - Threat Monitor"
         assert STRINGS["monitor.baseline"]["en"] == "Baseline saved. Future runs will alert on what changes since now."
-        assert STRINGS["prompts.title"]["en"] == "ClawCheck - copy-paste fix prompts"
+        assert STRINGS["prompts.title"]["en"] == "ClawSecCheck - copy-paste fix prompts"
         assert STRINGS["prompts.intro"]["en"] == "Paste each into your OpenClaw agent to fix it:"
 
 
@@ -236,5 +236,5 @@ class TestConstants:
         assert "he" in LANGS
 
     def test_default_lang_is_en(self):
-        from clawcheck.i18n import DEFAULT_LANG
+        from clawseccheck.i18n import DEFAULT_LANG
         assert DEFAULT_LANG == "en"

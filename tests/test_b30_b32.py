@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clawcheck.catalog import FAIL, PASS, UNKNOWN, WARN
-from clawcheck.checks import check_control_plane_mutation, check_sender_identity
-from clawcheck.collector import Context
+from clawseccheck.catalog import FAIL, PASS, UNKNOWN, WARN
+from clawseccheck.checks import check_control_plane_mutation, check_sender_identity
+from clawseccheck.collector import Context
 
 
 def _ctx(cfg: dict) -> Context:
@@ -317,7 +317,7 @@ def test_b32_fail_evidence_populated():
 # Reliability: fixture-based end-to-end
 # ============================================================
 
-from clawcheck import audit  # noqa: E402
+from clawseccheck import audit  # noqa: E402
 
 RELIABILITY = Path(__file__).resolve().parent.parent / "fixtures" / "reliability"
 

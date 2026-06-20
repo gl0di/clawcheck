@@ -1,8 +1,8 @@
 """B20 Bootstrap / memory write protection tests."""
 from pathlib import Path
 
-from clawcheck.checks import check_bootstrap_write_protection
-from clawcheck.collector import Context
+from clawseccheck.checks import check_bootstrap_write_protection
+from clawseccheck.collector import Context
 
 
 def _ctx(home):
@@ -72,7 +72,7 @@ def test_b20_group_writable_memory_warns(tmp_path):
 
 # ---- Windows / non-POSIX -> UNKNOWN ----
 def test_b20_windows_is_unknown(monkeypatch, tmp_path):
-    from clawcheck import checks
+    from clawseccheck import checks
     monkeypatch.setattr(checks, "_is_posix", lambda: False)
     ws = _ws(tmp_path)
     (ws / "SOUL.md").write_text("identity")

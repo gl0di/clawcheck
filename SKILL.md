@@ -1,11 +1,11 @@
 ---
-name: clawcheck
-version: 0.15.3
+name: clawseccheck
+version: 0.16.0
 description: Free, local, read-only security self-audit for your own OpenClaw agent. Scores your setup (A–F), finds the most urgent holes, and gives copy-paste fixes. No API key, no data leaves your machine.
 metadata: {"openclaw":{"emoji":"🔍","os":["darwin","linux","win32"],"user-invocable":true}}
 ---
 
-# ClawCheck — OpenClaw Security Self-Audit
+# ClawSecCheck — OpenClaw Security Self-Audit
 
 ## When to use this skill
 
@@ -13,7 +13,7 @@ Activate when the user says anything like:
 "check my security", "is my agent safe", "audit me", "security check", "what's my score",
 "am I vulnerable", "scan my agent", "how secure is my setup", "test my agent for attacks".
 
-## What ClawCheck does (be transparent)
+## What ClawSecCheck does (be transparent)
 
 It runs a **read-only** local script that inspects the user's own agent: `~/.openclaw/openclaw.json`,
 the workspace bootstrap files (`SOUL.md`, `AGENTS.md`, `TOOLS.md`, `MEMORY.md`, etc.), the text of
@@ -154,7 +154,7 @@ connect to the MCP server and does not change any configuration.
 
 First, tell the user in plain language what will happen:
 > "I'll take a snapshot of your current setup. Next time I run, I'll tell you only what changed.
-> One small file (~/.clawcheck/state.json) will be saved locally — nothing else."
+> One small file (~/.clawseccheck/state.json) will be saved locally — nothing else."
 
 Wait for the user to confirm. Only then run:
 
@@ -243,9 +243,9 @@ Use this to map what the user says to the right command:
 
 ---
 
-## Boundary — what ClawCheck will NOT do (critical)
+## Boundary — what ClawSecCheck will NOT do (critical)
 
-ClawCheck is a **checker and guide**. It does NOT apply changes.
+ClawSecCheck is a **checker and guide**. It does NOT apply changes.
 
 - **Never** edit, create, or delete any config file, settings file, or agent file.
 - **Never** apply a fix suggested by `--prompts` — only show it; let the user or their agent apply it.
@@ -268,5 +268,5 @@ For completeness — these are less common but available:
 - `--exit-code` — exit 1 if any unsuppressed FAIL finding exists.
 - `--verbose` / `--debug` / `--log PATH` — local logging with secret redaction.
 - `--no-native` — skip the built-in `openclaw security audit` (for offline / hermetic testing).
-- `--verify-self` — print SHA-256 digest of ClawCheck's source files for tamper detection.
-- `--show-suppressed` — list any findings the user has silenced via `.clawcheckignore`.
+- `--verify-self` — print SHA-256 digest of ClawSecCheck's source files for tamper detection.
+- `--show-suppressed` — list any findings the user has silenced via `.clawseccheckignore`.

@@ -1,4 +1,4 @@
-"""Tests for clawcheck/guide.py — suggest_actions + render_next_actions.
+"""Tests for clawseccheck/guide.py — suggest_actions + render_next_actions.
 
 All tests are offline and deterministic. Uses real audit() on fixtures
 (include_native=False) so no Finding objects need manual construction.
@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clawcheck import audit
-from clawcheck.catalog import FAIL, PASS, UNKNOWN, WARN, Finding
-from clawcheck.guide import Action, render_next_actions, suggest_actions
-from clawcheck.scoring import ScoreResult
+from clawseccheck import audit
+from clawseccheck.catalog import FAIL, PASS, UNKNOWN, WARN, Finding
+from clawseccheck.guide import Action, render_next_actions, suggest_actions
+from clawseccheck.scoring import ScoreResult
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 

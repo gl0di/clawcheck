@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from clawcheck.cli import main
+from clawseccheck.cli import main
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 VULN = str(FIXTURES / "home_vuln")
@@ -130,7 +130,7 @@ def test_trend_prints_trend_line(tmp_path, capsys):
     hist = tmp_path / "history.jsonl"
     main(["--home", VULN] + BASE + ["--trend", "--history", str(hist)])
     out = capsys.readouterr().out
-    # render_trend header is "ClawCheck - Score Trend"
+    # render_trend header is "ClawSecCheck - Score Trend"
     assert "Score Trend" in out or "history" in out.lower() or "No history" in out or any(
         c.isdigit() for c in out
     )
@@ -196,7 +196,7 @@ def test_next_flag_standalone_no_report(capsys):
     """--next must not also print the full report."""
     main(["--home", VULN] + BASE + ["--next"])
     out = capsys.readouterr().out
-    assert "ClawCheck - OpenClaw Security Audit" not in out
+    assert "ClawSecCheck - OpenClaw Security Audit" not in out
 
 
 def test_next_flag_safe_fixture(capsys):
@@ -287,7 +287,7 @@ def test_debug_flag_does_not_crash(capsys):
 
 
 def test_log_flag_writes_file(tmp_path, capsys):
-    logfile = tmp_path / "clawcheck.log"
+    logfile = tmp_path / "clawseccheck.log"
     rc = main(["--home", SAFE] + BASE + ["--verbose", "--log", str(logfile)])
     assert rc == 0
     assert logfile.is_file()

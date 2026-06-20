@@ -1,4 +1,4 @@
-"""Internationalisation support for ClawCheck.
+"""Internationalisation support for ClawSecCheck.
 
 Pure stdlib — no external dependencies. English is the canonical source of
 truth (strings are copied verbatim from report.py); translations are additive.
@@ -24,8 +24,8 @@ def is_rtl(lang: str) -> bool:
 # ---------------------------------------------------------------------------
 STRINGS: dict[str, dict[str, str]] = {
     "report.title": {
-        "en": "ClawCheck - OpenClaw Security Audit",
-        "he": "ClawCheck - ביקורת אבטחה של OpenClaw",
+        "en": "ClawSecCheck - OpenClaw Security Audit",
+        "he": "ClawSecCheck - ביקורת אבטחה של OpenClaw",
     },
     "report.score_line": {
         "en": "Score: {score}/100   Grade: {grade}   Lethal Trifecta: {trifecta}",
@@ -36,12 +36,12 @@ STRINGS: dict[str, dict[str, str]] = {
         "he": "(מוגבל מ-{raw} - ממצא {sev} פתוח)",
     },
     "report.no_issues": {
-        "en": "No issues found by ClawCheck. Keep it that way. {ok}",
-        "he": "ClawCheck לא מצא בעיות. שמור על זה. {ok}",
+        "en": "No issues found by ClawSecCheck. Keep it that way. {ok}",
+        "he": "ClawSecCheck לא מצא בעיות. שמור על זה. {ok}",
     },
     "report.to_fix": {
-        "en": "{n} thing(s) to fix (ClawCheck) - most urgent first:",
-        "he": "{n} דבר(ים) לתיקון (ClawCheck) - הדחופים ביותר קודם:",
+        "en": "{n} thing(s) to fix (ClawSecCheck) - most urgent first:",
+        "he": "{n} דבר(ים) לתיקון (ClawSecCheck) - הדחופים ביותר קודם:",
     },
     "report.label_why": {
         "en": "why",
@@ -52,12 +52,12 @@ STRINGS: dict[str, dict[str, str]] = {
         "he": "תיקון",
     },
     "report.suppressed_count": {
-        "en": "({n} finding(s) suppressed via .clawcheckignore)",
-        "he": "({n} ממצא(ים) מושתקים באמצעות .clawcheckignore)",
+        "en": "({n} finding(s) suppressed via .clawseccheckignore)",
+        "he": "({n} ממצא(ים) מושתקים באמצעות .clawseccheckignore)",
     },
     "report.gov_warning": {
-        "en": "WARNING: a CRITICAL finding ({id}) is suppressed via .clawcheckignore",
-        "he": "אזהרה: ממצא קריטי ({id}) מושתק באמצעות .clawcheckignore",
+        "en": "WARNING: a CRITICAL finding ({id}) is suppressed via .clawseccheckignore",
+        "he": "אזהרה: ממצא קריטי ({id}) מושתק באמצעות .clawseccheckignore",
     },
     "report.native_header": {
         "en": "--- Also from OpenClaw's built-in `security audit` ---",
@@ -84,12 +84,12 @@ STRINGS: dict[str, dict[str, str]] = {
         "he": "Lethal Trifecta",
     },
     "card.audited_by": {
-        "en": "audited by ClawCheck",
-        "he": "נבדק על ידי ClawCheck",
+        "en": "audited by ClawSecCheck",
+        "he": "נבדק על ידי ClawSecCheck",
     },
     "monitor.title": {
-        "en": "ClawCheck - Threat Monitor",
-        "he": "ClawCheck - מנטור איומים",
+        "en": "ClawSecCheck - Threat Monitor",
+        "he": "ClawSecCheck - מנטור איומים",
     },
     "monitor.current": {
         "en": "Current: {score}/100  Grade: {grade}",
@@ -108,8 +108,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "he": "{n} שינוי(ים) זוהה(ו) מאז הבדיקה האחרונה:",
     },
     "prompts.title": {
-        "en": "ClawCheck - copy-paste fix prompts",
-        "he": "ClawCheck - הנחיות תיקון להעתקה-הדבקה",
+        "en": "ClawSecCheck - copy-paste fix prompts",
+        "he": "ClawSecCheck - הנחיות תיקון להעתקה-הדבקה",
     },
     "prompts.intro": {
         "en": "Paste each into your OpenClaw agent to fix it:",
@@ -120,12 +120,12 @@ STRINGS: dict[str, dict[str, str]] = {
         "he": "אין מה לתקן. {ok}",
     },
     "html.title": {
-        "en": "ClawCheck Security Audit Report",
-        "he": "דוח ביקורת אבטחה של ClawCheck",
+        "en": "ClawSecCheck Security Audit Report",
+        "he": "דוח ביקורת אבטחה של ClawSecCheck",
     },
     "html.h1": {
-        "en": "🔍 ClawCheck Security Audit Report",
-        "he": "🔍 דוח ביקורת אבטחה של ClawCheck",
+        "en": "🔍 ClawSecCheck Security Audit Report",
+        "he": "🔍 דוח ביקורת אבטחה של ClawSecCheck",
     },
     "html.label_score": {
         "en": "Score:",
@@ -797,12 +797,12 @@ PHRASES: dict[str, dict[str, str]] = {
     # ---- B16: Monitoring ----
     # fix (WARN path)
     "Install a monitoring skill (e.g. ClawSec or openclaw-security-monitor), wire "
-    "audit logging to an alert channel, or schedule ClawCheck's own lightweight "
+    "audit logging to an alert channel, or schedule ClawSecCheck's own lightweight "
     "`audit.py --monitor` so changes don't go unnoticed.": {
         "he": (
             "התקן מיומנות ניטור (כגון ClawSec או openclaw-security-monitor), חבר "
             "רישום ביקורת לערוץ התראות, או תזמן את `audit.py --monitor` הקל של "
-            "ClawCheck כך ששינויים לא יעברו ללא הבחנה."
+            "ClawSecCheck כך ששינויים לא יעברו ללא הבחנה."
         ),
     },
     # detail (WARN path)

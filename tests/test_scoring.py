@@ -1,7 +1,7 @@
-from clawcheck.catalog import (
+from clawseccheck.catalog import (
     CRITICAL, FAIL, HIGH, LOW, MEDIUM, PASS, UNKNOWN, WARN, Finding,
 )
-from clawcheck.scoring import compute, grade_for
+from clawseccheck.scoring import compute, grade_for
 
 
 def _f(severity, status, scored=True):

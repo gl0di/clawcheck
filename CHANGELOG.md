@@ -1,15 +1,26 @@
 # Changelog
 
-All notable changes to ClawCheck are documented here.
+All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
+
+## [0.16.0] — 2026-06-20
+
+### Changed
+- **Renamed the project to ClawSecCheck.** The previous ClawHub slug `clawcheck` collided with
+  another publisher (`AMBIGUOUS_SKILL_SLUG`), and the CLI offers no owner flag to disambiguate. The
+  project is now **ClawSecCheck** everywhere — package `clawseccheck`, repo `gl0di/clawseccheck`,
+  ClawHub slug `clawseccheck`, console script `clawseccheck`, state dir `~/.clawseccheck`, ignore
+  file `.clawseccheckignore`. The slug is now unique, so `openclaw skills install clawseccheck` and
+  `git:gl0di/clawseccheck` both install cleanly. GitHub auto-redirects the old repo URL, so existing
+  `git:gl0di/clawcheck` references keep working. **No functional change** to any check, the engine,
+  or the deterministic A–F score — this is a pure rename.
 
 ## [0.15.3] — 2026-06-20
 
 ### Fixed
-- **Docs: scope the ClawHub slug.** The bare slug `clawcheck` is used by more than one ClawHub
-  publisher, so `openclaw skills install/update clawcheck` fails with `AMBIGUOUS_SKILL_SLUG`. The
-  install/update instructions now use the owner-scoped `@gl0di/clawcheck`, and recommend the
-  unambiguous `git:gl0di/clawcheck` as the primary channel.
+- **Docs: scope the ClawHub slug.** (Historical — under the former `clawcheck` name.) The bare slug
+  `clawcheck` was used by more than one ClawHub publisher, so `openclaw skills install/update clawcheck`
+  failed with `AMBIGUOUS_SKILL_SLUG`. Superseded by the 0.16.0 rename to a unique slug.
 
 ## [0.15.2] — 2026-06-20
 
@@ -34,7 +45,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [Se
 
 ### Fixed
 - **ClawHub version.** Declared `version` in the SKILL.md frontmatter so ClawHub indexes the real
-  release instead of defaulting to 0.1.0. (Bump this alongside `clawcheck.__version__` each release.)
+  release instead of defaulting to 0.1.0. (Bump this alongside `clawseccheck.__version__` each release.)
 
 ## [0.15.0] — 2026-06-19
 
@@ -143,10 +154,10 @@ This materially improves true-positive coverage on real OpenClaw configs.
 
 ### Added
 - **Guided mode — "What you can do next" recommendation block.** After every default audit run,
-  ClawCheck now prints a short, prioritised list of next steps tailored to your actual findings —
+  ClawSecCheck now prints a short, prioritised list of next steps tailored to your actual findings —
   pointing you to the right tool without requiring you to know any flags. The same list is
   available in `--json` as a `"next_actions"` array (id, title, command, why, priority) and as a
-  standalone output via `--next`. The engine (`clawcheck/guide.py`) drives seven recommendation
+  standalone output via `--next`. The engine (`clawseccheck/guide.py`) drives seven recommendation
   triggers: fix prompts for open FAIL findings, skill vetting when third-party skills are
   installed, monitoring setup when B16 is unresolved, live injection test, MCP review, trend
   tracking, and grade sharing. Non-technical users running the skill inside OpenClaw can now
@@ -156,11 +167,11 @@ This materially improves true-positive coverage on real OpenClaw configs.
   Lethal Trifecta, a short numbered next-steps menu drawn from `--next`, and per-choice
   sub-sections covering every tool (`--prompts`, `--vet`, `--monitor`, `--canary`/`--dryrun`/
   `--redteam`, `--trend`, `--percentile`, `--badge`/`--card`). A natural-language-to-tool lookup
-  table and an explicit boundary section ("what ClawCheck will NOT do") are included.
+  table and an explicit boundary section ("what ClawSecCheck will NOT do") are included.
 
-**ClawCheck still only CHECKS and GUIDES — it does NOT apply fixes or change your config.**
+**ClawSecCheck still only CHECKS and GUIDES — it does NOT apply fixes or change your config.**
 For every open finding, `--prompts` shows a ready copy-paste prompt you hand to your agent or
-apply yourself; ClawCheck never touches your OpenClaw configuration. Everything stays local: no
+apply yourself; ClawSecCheck never touches your OpenClaw configuration. Everything stays local: no
 network calls, no telemetry, no write unless you ask. English report/card output for the four
 core renderers (`render_report`, `render_card`, `render_monitor`, `render_prompts`) is
 byte-identical to v0.10.0.
@@ -170,16 +181,16 @@ byte-identical to v0.10.0.
 ### Added
 - **`--sarif PATH` — local SARIF 2.1.0 output.** Writes a SARIF file to the path you
   specify; compatible with GitHub Code Scanning's "Upload SARIF" step. The file is written
-  locally and never uploaded — ClawCheck makes no network calls.
+  locally and never uploaded — ClawSecCheck makes no network calls.
 - **`--fail-under N` / `--exit-code` — CI gating.** `--fail-under N` exits 1 when the
   audit score is below N; `--exit-code` exits 1 when any unsuppressed FAIL finding is
   present. Without these flags the exit code stays 0 (backward-compatible).
 - **`--verbose` / `--debug` / `--log PATH` — local logging with secret redaction.**
   Structured stdlib `logging` to stderr (INFO or DEBUG level) and optionally to a file.
   Config values that may contain secrets are redacted before being written to any log,
-  practising ClawCheck's own B9/B10 checks.
+  practising ClawSecCheck's own B9/B10 checks.
 - **`--trend` / `--history PATH` — local score history.** Records each audit result to an
-  append-only JSONL file (default `~/.clawcheck/history.jsonl`, `chmod 600`) and prints a
+  append-only JSONL file (default `~/.clawseccheck/history.jsonl`, `chmod 600`) and prints a
   compact trend table with per-run arrows. History is stored only on your machine.
 - **`--percentile` — offline reference percentile.** Shows where your score sits relative
   to a bundled static reference profile. Entirely offline — no comparison over the network,
@@ -214,11 +225,11 @@ All history, SARIF files, and logs are written only on your machine, only when y
   (a malicious update runs with the agent's full permissions).
 - **C5 — Native-binary PATH safety.** Flags a world-writable `openclaw` binary dir or a writable
   PATH dir that could shadow it (poisoned-PATH protection for the native audit). POSIX, advisory.
-- **`--verify-self`.** Prints a SHA-256 digest of ClawCheck's own engine source so you can confirm
+- **`--verify-self`.** Prints a SHA-256 digest of ClawSecCheck's own engine source so you can confirm
   it wasn't tampered with against a trusted release.
 
 ### Security
-- **`.clawcheckignore` governance.** The report warns when a CRITICAL finding (or a critical check
+- **`.clawseccheckignore` governance.** The report warns when a CRITICAL finding (or a critical check
   id B1/B2/B13/B20) is suppressed, and `--monitor` alerts when the ignore file changes — so a
   suppression can't quietly hide a real hole.
 
@@ -266,16 +277,16 @@ All history, SARIF files, and logs are written only on your machine, only when y
 ## [0.5.0] — 2026-06-19
 
 ### Added
-- **Installable CLI.** `pyproject.toml` (zero dependencies) exposes a `clawcheck` console script
-  and `python -m clawcheck`, so it's `pipx install`-able as a standalone tool — not just the
-  bundled skill. The CLI moved to `clawcheck/cli.py`; `audit.py` is now a thin shim so the
+- **Installable CLI.** `pyproject.toml` (zero dependencies) exposes a `clawseccheck` console script
+  and `python -m clawseccheck`, so it's `pipx install`-able as a standalone tool — not just the
+  bundled skill. The CLI moved to `clawseccheck/cli.py`; `audit.py` is now a thin shim so the
   OpenClaw skill (`python3 {baseDir}/audit.py`) keeps working unchanged.
 - **CI.** GitHub Actions runs the test suite + ruff on every push/PR.
 
 ## [0.4.0] — 2026-06-19
 
 ### Added
-- **Baseline suppression (`.clawcheckignore`).** Accept findings you've reviewed: list a check
+- **Baseline suppression (`.clawseccheckignore`).** Accept findings you've reviewed: list a check
   id (`B14`) or a finding fingerprint (`B14:ab12cd34`), one per line. Suppressed findings drop
   out of the score, the report, and monitor alerts. `--show-suppressed` lists them.
 - **B17 — Autonomy / heartbeat actions.** Flags when the agent runs autonomously (a `HEARTBEAT.md`
@@ -287,7 +298,7 @@ All history, SARIF files, and logs are written only on your machine, only when y
 
 ### Fixed
 - **Skill registration.** `SKILL.md` misused `requires.config` (a config *key* list) for a file
-  path, so OpenClaw treated the requirement as unmet and `/clawcheck` was not available as a
+  path, so OpenClaw treated the requirement as unmet and `/clawseccheck` was not available as a
   command. Removed it — the skill now always registers and handles a missing config gracefully.
 - **B3 over-strict.** A non-`minimal` `tools.profile` (e.g. `coding`) is a least-privilege
   preference, not a vulnerability — it is now a WARN, not a hard FAIL that capped the score.
@@ -308,14 +319,14 @@ All history, SARIF files, and logs are written only on your machine, only when y
   (prompt injection / SSRF / data exposure); `UNKNOWN` when none are configured.
 - **Version / update hygiene (C4, advisory).** Notes the OpenClaw version and reminds you to
   patch (ClawHavoc / CVE-2026-25253 target outdated installs).
-- **Built-in audit merge.** ClawCheck now runs your own read-only `openclaw security audit
+- **Built-in audit merge.** ClawSecCheck now runs your own read-only `openclaw security audit
   --json` and folds its findings into the same report (`--no-native` to disable).
 - **Threat-monitoring check (B16).** Verifies whether the user actually has monitoring /
   detection in place (a monitoring skill/plugin such as ClawSec or `openclaw-security-monitor`,
   or monitoring/alerts config); warns if an attack would otherwise go unnoticed.
 - **Built-in monitor (`--monitor`).** Optional lightweight monitoring: scheduled re-audit +
   change detection — alerts on a new/modified installed skill, `SOUL.md` drift, a dropped score,
-  or a check going PASS → FAIL. Keeps one snapshot at `~/.clawcheck/state.json`. (Scheduled
+  or a check going PASS → FAIL. Keeps one snapshot at `~/.clawseccheck/state.json`. (Scheduled
   re-audit, not a real-time runtime IDS — that heavier model is intentionally out of scope.)
 - **`--vet PATH`.** Vet a skill (folder or `SKILL.md`) with the B13 malware scan *before*
   installing it — verdict SAFE / SUSPICIOUS / DANGEROUS. Trust-before-install.
@@ -326,12 +337,12 @@ All history, SARIF files, and logs are written only on your machine, only when y
 - **`--save PATH`.** Optionally write the report to a file.
 
 ### Changed
-- Renamed **ClawShield → ClawCheck** (the tool scans & reports, it does not "shield").
+- Renamed **ClawShield → ClawSecCheck** (the tool scans & reports, it does not "shield").
 - High-precision tuning: `curl | sh` from reputable installer hosts (uv/rustup/brew/deno/…)
   is not flagged; credential-path mentions are only flagged when exfiltrated on the same line.
 
 ### Security
-- Provenance: ClawCheck's own checks remain offline, read-only, zero-dependency. The only
+- Provenance: ClawSecCheck's own checks remain offline, read-only, zero-dependency. The only
   external command is your own `openclaw security audit --json` (fixed args, no shell, no
   `--fix`, with a timeout). The only optional write is `--save`.
 

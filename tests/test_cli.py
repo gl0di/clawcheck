@@ -1,7 +1,7 @@
-"""CLI entrypoint (clawcheck.cli.main)."""
+"""CLI entrypoint (clawseccheck.cli.main)."""
 from pathlib import Path
 
-from clawcheck.cli import main
+from clawseccheck.cli import main
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -28,4 +28,4 @@ def test_cli_vet_dangerous_exits_nonzero(tmp_path, capsys):
 
 def test_cli_canary_returns_zero(capsys):
     assert main(["--canary", "--ascii"]) == 0
-    assert "CLAWCHECK-CANARY-" in capsys.readouterr().out
+    assert "CLAWSECCHECK-CANARY-" in capsys.readouterr().out

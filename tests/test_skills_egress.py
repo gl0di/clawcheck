@@ -7,9 +7,9 @@ import base64
 import json
 from pathlib import Path
 
-from clawcheck import audit, run_all
-from clawcheck.catalog import CRITICAL, FAIL, HIGH, PASS, UNKNOWN, WARN
-from clawcheck.collector import Context
+from clawseccheck import audit, run_all
+from clawseccheck.catalog import CRITICAL, FAIL, HIGH, PASS, UNKNOWN, WARN
+from clawseccheck.collector import Context
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 DOC_IP = "203.0.113.10"   # RFC 5737 TEST-NET-3 (documentation only)

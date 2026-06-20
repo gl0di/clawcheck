@@ -1,4 +1,4 @@
-"""Safe local logging helper for ClawCheck.
+"""Safe local logging helper for ClawSecCheck.
 
 Provides:
   - redact(text): mask secret-looking substrings before they reach a log
@@ -105,7 +105,7 @@ def get_logger(
     debug: bool = False,
     logfile: str | None = None,
 ) -> logging.Logger:
-    """Return a stdlib Logger named 'clawcheck' with redaction built in.
+    """Return a stdlib Logger named 'clawseccheck' with redaction built in.
 
     Level selection (first match wins):
       debug=True  -> DEBUG
@@ -124,7 +124,7 @@ def get_logger(
 
     propagate is set to False so records are not also sent to the root logger.
     """
-    logger = logging.getLogger("clawcheck")
+    logger = logging.getLogger("clawseccheck")
 
     # Clear existing handlers to make the function idempotent.
     logger.handlers.clear()

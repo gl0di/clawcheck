@@ -57,7 +57,7 @@ jobs:
       - name: Publish skill
         run: >
           clawhub publish .
-          --slug clawcheck
+          --slug clawseccheck
           --owner gl0di
           --version "${{ steps.ver.outputs.version }}"
           --changelog "Release ${{ steps.ver.outputs.version }} (${{ github.sha }})"

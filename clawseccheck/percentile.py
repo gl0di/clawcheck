@@ -1,4 +1,4 @@
-"""Offline, illustrative percentile ranking for ClawCheck scores.
+"""Offline, illustrative percentile ranking for ClawSecCheck scores.
 
 This module provides a BUILT-IN reference distribution — it is NOT telemetry,
 NOT collected from real users, and involves NO network calls whatsoever.

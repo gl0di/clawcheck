@@ -6,8 +6,8 @@ UNKNOWN when no MCP servers are configured.
 """
 from pathlib import Path
 
-from clawcheck.checks import check_mcp_hardening
-from clawcheck.collector import Context
+from clawseccheck.checks import check_mcp_hardening
+from clawseccheck.collector import Context
 
 
 def _ctx(cfg: dict) -> Context:

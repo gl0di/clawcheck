@@ -1,4 +1,4 @@
-# ClawCheck 🔍 — OpenClaw Security Self-Audit Skill
+# ClawSecCheck 🔍 — OpenClaw Security Self-Audit Skill
 
 **Free. Local. Read-only. No API key. Your data never leaves your machine.**
 
@@ -21,11 +21,11 @@ So, before you download, install, or use **any** skill (this one included):
 1. **Read the source** — it's plain text. If you can't see what it does, don't run it.
 2. **Have your agent analyse it for you** — ask OpenClaw to review the skill's `SKILL.md`
    and scripts for shell-exec, credential access, paste-host uploads, and obfuscated
-   (base64) payloads *before* enabling it. ClawCheck does this with `--vet <skill>`.
+   (base64) payloads *before* enabling it. ClawSecCheck does this with `--vet <skill>`.
 3. **Pin a known release**, prefer signed / VirusTotal-clean skills, and rotate any secret a
    skill could have reached if you ever suspect it.
 
-ClawCheck practises this: it is open source, zero-dependency, read-only, and its **B13** check
+ClawSecCheck practises this: it is open source, zero-dependency, read-only, and its **B13** check
 does exactly this vetting on the skills you've *already* installed. Trust is earned by being
 readable — so read it.
 
@@ -35,9 +35,9 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
 
 - The native audit **does not inspect the content of your bootstrap files**
   (`SOUL.md`, `AGENTS.md`, `TOOLS.md`): they're injected into the system prompt as *trusted
-  context* with no validation. ClawCheck **does** check them for prompt-injection-prone
+  context* with no validation. ClawSecCheck **does** check them for prompt-injection-prone
   directives (our check **B6**).
-- ClawCheck is **100% local** — no API key, nothing transmitted (Trent uploads your config;
+- ClawSecCheck is **100% local** — no API key, nothing transmitted (Trent uploads your config;
   the native one is CLI-only).
 - It leads with a **shareable Score + Grade + Lethal Trifecta ratio** you can post to the
   community — without ever exposing your actual findings.
@@ -75,18 +75,18 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
 ## Built-in audit, included for you
 
 Non-technical users will never open a terminal to run OpenClaw's own
-`openclaw security audit`. So ClawCheck runs it **for you** (read-only) and folds its
-findings into the same plain-language report — one button shows both ClawCheck's checks
+`openclaw security audit`. So ClawSecCheck runs it **for you** (read-only) and folds its
+findings into the same plain-language report — one button shows both ClawSecCheck's checks
 *and* the platform's own audit. Native findings are shown but are **not** mixed into the
-ClawCheck score (kept deterministic). Disable with `--no-native`.
+ClawSecCheck score (kept deterministic). Disable with `--no-native`.
 
 ## Trust / provenance
 
-ClawCheck is **open source and zero-dependency (Python stdlib only)**. Its own checks are
+ClawSecCheck is **open source and zero-dependency (Python stdlib only)**. Its own checks are
 **read-only and offline** — they read only `~/.openclaw/openclaw.json` and your workspace
 bootstrap markdown files, and make **no network calls**. It writes nothing by default; the only
 writes are ones you ask for — a report file (`--save`) and the `--monitor` snapshot at
-`~/.clawcheck/state.json`. It never touches your OpenClaw config or data.
+`~/.clawseccheck/state.json`. It never touches your OpenClaw config or data.
 
 The **only** external command it can run is your own, fixed and read-only:
 
@@ -95,24 +95,25 @@ openclaw security audit --json
 ```
 
 No shell, never `--fix`, with a timeout; skip it entirely with `--no-native`. The entire
-source is in [`clawcheck/`](clawcheck/) — read it before you trust it. Amid the ClawHavoc
+source is in [`clawseccheck/`](clawseccheck/) — read it before you trust it. Amid the ClawHavoc
 malicious-skill wave, an audit skill should prove its own safety; this one does.
 
 ## Install & run
 
 ```bash
-openclaw skills install git:gl0di/clawcheck      # from GitHub (recommended — unambiguous)
-openclaw skills install @gl0di/clawcheck         # from ClawHub (scope the owner: the bare
-                                                 # slug "clawcheck" is used by more than one publisher)
-# then ask your agent: "audit my OpenClaw setup with clawcheck"
+openclaw skills install clawseccheck            # from ClawHub (the slug is unique)
+openclaw skills install git:gl0di/clawseccheck  # or straight from GitHub
+# then ask your agent: "audit my OpenClaw setup with clawseccheck"
 ```
+
+Skill page on ClawHub: **<https://clawhub.ai/gl0di/clawseccheck>**.
 
 Or install it as a standalone CLI (zero dependencies):
 
 ```bash
-pipx install git+https://github.com/gl0di/clawcheck   # or: pip install .
-clawcheck --home ~/.openclaw                            # then just `clawcheck`
-python -m clawcheck                                     # also works
+pipx install git+https://github.com/gl0di/clawseccheck   # or: pip install .
+clawseccheck --home ~/.openclaw                            # then just `clawseccheck`
+python -m clawseccheck                                     # also works
 ```
 
 Or run the bundled script directly (Linux/macOS):
@@ -141,9 +142,8 @@ skipped on Windows (NTFS uses ACLs), and all output has an ASCII fallback.
 OpenClaw remembers where a skill came from, so users get your new versions by updating:
 
 ```bash
-openclaw skills update @gl0di/clawcheck   # pull the latest (scope the owner — "clawcheck" alone
-                                          # is ambiguous; another publisher also uses that slug)
-clawhub update --all                      # update every installed skill
+openclaw skills update clawseccheck   # pull the latest from its source (Git/ClawHub)
+clawhub update --all                  # update every installed skill
 ```
 
 (Or re-run the install command.) An auto-updater skill / `update.auto.enabled` in
@@ -154,8 +154,8 @@ auto-update for anything security-sensitive.
 
 ## Guided mode
 
-When you run ClawCheck inside OpenClaw, the agent walks you through the entire audit
-conversationally — you never need to know a flag. After every default run, ClawCheck prints a
+When you run ClawSecCheck inside OpenClaw, the agent walks you through the entire audit
+conversationally — you never need to know a flag. After every default run, ClawSecCheck prints a
 short **"What you can do next"** block: a prioritised list of the most relevant follow-up steps
 for *your* findings, with the exact command to run each one.
 
@@ -171,7 +171,7 @@ first; unvetted third-party skills surface `--vet`; no monitoring detected surfa
 and so on. When there is nothing urgent, the block tells you so and suggests the lighter follow-ups
 (trend tracking, grade sharing).
 
-**ClawCheck never applies a fix or changes your config.** For every open finding, `--prompts`
+**ClawSecCheck never applies a fix or changes your config.** For every open finding, `--prompts`
 gives you a ready copy-paste prompt to hand to your agent (or apply yourself); the change is
 yours to make. Everything stays local.
 
@@ -184,14 +184,14 @@ and shows it to you **right there in the chat** — no terminal, no setup. You s
 2. the **fix list, most urgent first**, in plain language, and
 3. a **shareable badge** (grade only — safe to post; the findings stay private).
 
-To keep a copy, add `--save report.txt` and ClawCheck writes the full report to that file
+To keep a copy, add `--save report.txt` and ClawSecCheck writes the full report to that file
 (written only when you ask). For automation, `--json` gives a machine-readable result.
 
 ## Threat monitoring
 
 Two complementary things:
 
-**B16 — do you have monitoring at all?** ClawCheck checks whether you have threat
+**B16 — do you have monitoring at all?** ClawSecCheck checks whether you have threat
 monitoring/detection set up — an agent with none won't alert you if it's compromised. B16 looks
 for a monitoring skill/plugin (ClawSec, `openclaw-security-monitor`, …) or monitoring/alerts
 config; if none is found it warns you and tells you how to add one.
@@ -202,16 +202,16 @@ dropped score, a check going PASS → FAIL.
 
 ```bash
 python3 audit.py --monitor                 # first run = baseline, then alerts on changes
-python3 audit.py --monitor --state ~/.clawcheck/state.json
+python3 audit.py --monitor --state ~/.clawseccheck/state.json
 ```
 
 Schedule it via OpenClaw's heartbeat or cron; when an alert fires, have your agent message you.
-It stores one small snapshot at `~/.clawcheck/state.json`. (Scheduled re-audit + drift
+It stores one small snapshot at `~/.clawseccheck/state.json`. (Scheduled re-audit + drift
 detection — not a real-time runtime IDS; that heavier model is intentionally out of scope.)
 
 ## Highest-risk paths
 
-Beyond individual checks, ClawCheck runs a **risk engine** that looks for dangerous
+Beyond individual checks, ClawSecCheck runs a **risk engine** that looks for dangerous
 *combinations* — capability chains where two or more co-occurring properties make a
 compromise catastrophic or trivial to execute.
 
@@ -248,7 +248,7 @@ python3 audit.py --fail-under 70            # exit 1 if score < 70 (use in CI pi
 python3 audit.py --exit-code                # exit 1 if any unsuppressed FAIL finding
 ```
 
-The SARIF file is written to the path you choose — ClawCheck never uploads it anywhere.
+The SARIF file is written to the path you choose — ClawSecCheck never uploads it anywhere.
 `--fail-under` and `--exit-code` do not change the default exit code (0) when omitted,
 preserving backward compatibility.
 
@@ -263,12 +263,12 @@ python3 audit.py --redteam                   # a multi-scenario adversarial payl
 python3 audit.py --dryrun                     # runtime behavioral test (fake secret + fake tools; sources: email, web, MCP response, memory, subagent)
 python3 audit.py --badge badge.svg          # write a shareable SVG grade badge
 python3 audit.py --html report.html         # standalone HTML report (private — owner view)
-python3 audit.py --verify-self               # SHA-256 of ClawCheck's own source (anti-tamper)
+python3 audit.py --verify-self               # SHA-256 of ClawSecCheck's own source (anti-tamper)
 python3 audit.py --prompts                   # a copy-paste "ask your agent to fix it" per finding
 python3 audit.py --lang he                   # Hebrew report (right-to-left); default auto-detects locale
-python3 audit.py --trend                     # print local score trend (stored in ~/.clawcheck/history.jsonl)
+python3 audit.py --trend                     # print local score trend (stored in ~/.clawseccheck/history.jsonl)
 python3 audit.py --percentile                # show where your score sits vs. an offline reference profile
-python3 audit.py --history ~/.clawcheck/history.jsonl  # custom history file path (default shown)
+python3 audit.py --history ~/.clawseccheck/history.jsonl  # custom history file path (default shown)
 python3 audit.py --verbose                   # INFO-level log to stderr (secrets redacted)
 python3 audit.py --debug                     # DEBUG-level log to stderr (secrets redacted)
 python3 audit.py --log audit.log            # also write log to a local file
@@ -297,17 +297,17 @@ python3 audit.py --log audit.log            # also write log to a local file
 - **`--percentile`** compares your score against a bundled offline reference profile — no network,
   no telemetry.
 - **`--verbose` / `--debug` / `--log PATH`** activate structured local logging. Config values
-  that may hold secrets are redacted before being written (practising ClawCheck's own B9/B10).
+  that may hold secrets are redacted before being written (practising ClawSecCheck's own B9/B10).
 
 ## Baseline (accepting findings)
 
-Reviewed a finding and decided it's acceptable? Add it to `~/.openclaw/.clawcheckignore` —
+Reviewed a finding and decided it's acceptable? Add it to `~/.openclaw/.clawseccheckignore` —
 one entry per line, either a check id (`B14`) or a finding fingerprint (`B14:ab12cd34`, shown
 with `--show-suppressed`). Suppressed findings drop out of the **score**, the **report**, and
 **monitor** alerts — so re-runs and `--monitor` stop nagging about things you've accepted.
 
 ```
-# ~/.openclaw/.clawcheckignore
+# ~/.openclaw/.clawseccheckignore
 B14            # accept the egress-surface advisory
 B12:1a2b3c4d   # accept one specific local-model finding
 ```
@@ -346,12 +346,12 @@ subagent sources — and a **risk engine** (`--risk-paths`): combinational chain
 surfaces the highest-risk capability paths (RISK-01 through RISK-08) without affecting the
 deterministic A–F score. All checks are grounded against the real OpenClaw schema (verified from
 docs.openclaw.ai and live fleet configs), so they fire on real installations rather than silently
-missing phantom field paths. ClawCheck still only checks and guides — it never applies fixes or
+missing phantom field paths. ClawSecCheck still only checks and guides — it never applies fixes or
 changes your config.
 
 ## Roadmap
 
-**Everything stays local. No telemetry, no phone-home, ever.** ClawCheck makes no network
+**Everything stays local. No telemetry, no phone-home, ever.** ClawSecCheck makes no network
 calls and transmits nothing — that is the whole point of a trust-first audit tool born amid the
 ClawHavoc exfiltration wave. Any "analytics" here is computed and stored **only on your machine**;
 the only thing that ever leaves is what *you* choose to post (the shareable grade badge). Planned,

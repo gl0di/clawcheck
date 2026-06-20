@@ -1,6 +1,6 @@
 """Optionally run OpenClaw's own `openclaw security audit` and fold its findings in.
 
-This is the ONLY external command ClawCheck ever runs: a single, fixed,
+This is the ONLY external command ClawSecCheck ever runs: a single, fixed,
 read-only invocation of the user's own `openclaw` CLI —
 
     openclaw security audit --json
@@ -8,7 +8,7 @@ read-only invocation of the user's own `openclaw` CLI —
 No shell (argument list, not a string), never `--fix`, with a timeout. If the
 `openclaw` binary is not on PATH or the call fails, we degrade gracefully and
 say so. Native findings are shown to the user but are NOT folded into the
-ClawCheck score (kept deterministic / no double-counting).
+ClawSecCheck score (kept deterministic / no double-counting).
 """
 from __future__ import annotations
 

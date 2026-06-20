@@ -1,4 +1,4 @@
-"""Check catalog: severity weights and metadata for every ClawCheck check.
+"""Check catalog: severity weights and metadata for every ClawSecCheck check.
 
 Grounded on docs/specs/openclaw-audit-skill-spec.md (v2). Pure stdlib, no deps.
 """

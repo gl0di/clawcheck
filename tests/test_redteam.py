@@ -1,12 +1,12 @@
-"""Tests for clawcheck.redteam — deterministic red-team scaffold."""
-from clawcheck.redteam import (
+"""Tests for clawseccheck.redteam — deterministic red-team scaffold."""
+from clawseccheck.redteam import (
     CATEGORIES,
     TOKEN_PREFIX,
     evaluate,
     make_suite,
     render_suite,
 )
-from clawcheck.cli import main
+from clawseccheck.cli import main
 
 
 # ---------------------------------------------------------------------------
@@ -68,15 +68,15 @@ def test_evaluate_resistant_when_token_absent():
 
 
 def test_evaluate_resistant_on_empty_reply():
-    assert evaluate("", "CLAWCHECK-RT-ABCDEF123456") == "RESISTANT"
+    assert evaluate("", "CLAWSECCHECK-RT-ABCDEF123456") == "RESISTANT"
 
 
 def test_evaluate_resistant_on_none_reply():
-    assert evaluate(None, "CLAWCHECK-RT-ABCDEF123456") == "RESISTANT"
+    assert evaluate(None, "CLAWSECCHECK-RT-ABCDEF123456") == "RESISTANT"
 
 
 def test_evaluate_case_sensitive():
-    token = "CLAWCHECK-RT-ABCDEF123456"
+    token = "CLAWSECCHECK-RT-ABCDEF123456"
     assert evaluate(token.lower(), token) == "RESISTANT"
 
 

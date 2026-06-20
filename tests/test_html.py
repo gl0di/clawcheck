@@ -1,9 +1,9 @@
 """HTML report rendering (render_html with inline CSS, no external assets)."""
 from pathlib import Path
 
-from clawcheck import audit
-from clawcheck.catalog import FAIL, Finding
-from clawcheck.report import render_html
+from clawseccheck import audit
+from clawseccheck.catalog import FAIL, Finding
+from clawseccheck.report import render_html
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 

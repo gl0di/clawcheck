@@ -17,8 +17,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from clawcheck.checks import vet_mcp
-from clawcheck.cli import main
+from clawseccheck.checks import vet_mcp
+from clawseccheck.cli import main
 
 
 # ---------------------------------------------------------------------------

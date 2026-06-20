@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "clawcheck"
+name = "clawseccheck"
 dynamic = ["version"]
 description = "Local, read-only OpenClaw security self-audit (zero dependencies)."
 readme = "README.md"
@@ -20,14 +20,14 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/gl0di/clawcheck"
-Issues = "https://github.com/gl0di/clawcheck/issues"
+Homepage = "https://github.com/gl0di/clawseccheck"
+Issues = "https://github.com/gl0di/clawseccheck/issues"
 
 [project.scripts]
-clawcheck = "clawcheck.cli:main"
+clawseccheck = "clawseccheck.cli:main"
 
 [tool.setuptools]
-packages = ["clawcheck"]
+packages = ["clawseccheck"]
 
 [tool.setuptools.dynamic]
-version = { attr = "clawcheck.__version__" }
+version = { attr = "clawseccheck.__version__" }

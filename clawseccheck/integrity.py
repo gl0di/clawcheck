@@ -1,26 +1,26 @@
-"""Self-integrity verification for the ClawCheck engine source.
+"""Self-integrity verification for the ClawSecCheck engine source.
 
-Computes a deterministic SHA-256 digest over all ``clawcheck/*.py`` files so
+Computes a deterministic SHA-256 digest over all ``clawseccheck/*.py`` files so
 users can detect whether the package was tampered with after a trusted release.
 
 Pure stdlib, no network, read-only.
 
 Usage (programmatic)::
 
-    from clawcheck.integrity import package_digest
+    from clawseccheck.integrity import package_digest
     combined, per_file = package_digest()
     print(combined)   # 64-char hex string
 
 Usage (CLI)::
 
-    clawcheck --verify-self
+    clawseccheck --verify-self
 """
 from __future__ import annotations
 
 import hashlib
 from pathlib import Path
 
-# The directory that contains this file *is* the clawcheck package.
+# The directory that contains this file *is* the clawseccheck package.
 _PKG_DIR = Path(__file__).resolve().parent
 
 
@@ -35,7 +35,7 @@ def package_digest(pkg_dir: Path | None = None) -> tuple[str, dict[str, str]]:
     Parameters
     ----------
     pkg_dir:
-        Directory to scan (defaults to the real ``clawcheck/`` package directory).
+        Directory to scan (defaults to the real ``clawseccheck/`` package directory).
         Exposed as a parameter so tests can supply a controlled set of files.
 
     Returns

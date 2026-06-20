@@ -208,7 +208,7 @@ def render_prompts(findings: list[Finding], ascii_only: bool = False,
     for i, f in enumerate(issues, 1):
         lines.append(f"{i}. [{f.severity}] {f.title}")
         lines.append(
-            f'   "My ClawCheck security audit flagged this on my OpenClaw agent: '
+            f'   "My ClawSecCheck security audit flagged this on my OpenClaw agent: '
             f'{f.title} — {f.detail} Please fix it: {f.fix} '
             f'Show me the exact change and ask before applying anything."')
         lines.append("")

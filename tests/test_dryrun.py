@@ -1,5 +1,5 @@
-"""Tests for clawcheck.dryrun — deterministic dry-run behavioral harness."""
-from clawcheck.dryrun import (
+"""Tests for clawseccheck.dryrun — deterministic dry-run behavioral harness."""
+from clawseccheck.dryrun import (
     SOURCES,
     _FAKE_PREFIX,
     _TOKEN_PREFIX,
@@ -7,7 +7,7 @@ from clawcheck.dryrun import (
     make_scenarios,
     render_dryrun,
 )
-from clawcheck.cli import main
+from clawseccheck.cli import main
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +238,7 @@ def test_render_dryrun_contains_verdict_labels():
 
 
 def test_render_dryrun_contains_fake_prefix_label():
-    """Render must mention CLAWCHECK_FAKE_ so the agent knows secrets are synthetic."""
+    """Render must mention CLAWSECCHECK_FAKE_ so the agent knows secrets are synthetic."""
     out = render_dryrun(make_scenarios())
     assert _FAKE_PREFIX in out or "FAKE SECRET" in out
 

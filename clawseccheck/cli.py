@@ -1,6 +1,6 @@
-"""ClawCheck command-line interface.
+"""ClawSecCheck command-line interface.
 
-Exposed as the `clawcheck` console script (see pyproject.toml), as `python -m clawcheck`,
+Exposed as the `clawseccheck` console script (see pyproject.toml), as `python -m clawseccheck`,
 and via the bundled skill entrypoint `python3 {baseDir}/audit.py`.
 
 Read-only. No network. No writes by default. Pure stdlib. Cross-platform.
@@ -60,8 +60,8 @@ def _emit(text: str) -> None:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="clawcheck",
-                                description="ClawCheck OpenClaw security self-audit (read-only).")
+    p = argparse.ArgumentParser(prog="clawseccheck",
+                                description="ClawSecCheck OpenClaw security self-audit (read-only).")
     p.add_argument("--home", default="~/.openclaw", help="OpenClaw home dir (default: ~/.openclaw)")
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("--card", action="store_true", help="print only the shareable badge")
@@ -90,7 +90,7 @@ def main(argv=None) -> int:
     p.add_argument("--show-suppressed", action="store_true",
                    help="list suppressed finding ids + fingerprints and exit")
     p.add_argument("--verify-self", action="store_true",
-                   help="print the SHA-256 digest of the ClawCheck engine source for tamper detection")
+                   help="print the SHA-256 digest of the ClawSecCheck engine source for tamper detection")
     p.add_argument("--lang", choices=("en", "he"), default=_default_lang(),
                    help="output language (en|he; he is right-to-left)")
     p.add_argument("--sarif", metavar="PATH",
@@ -130,7 +130,7 @@ def main(argv=None) -> int:
     if args.verify_self:
         from . import __version__
         combined, per_file = package_digest()
-        lines = [f"ClawCheck {__version__} — engine source digest (SHA-256)",
+        lines = [f"ClawSecCheck {__version__} — engine source digest (SHA-256)",
                  f"combined : {combined}",
                  ""]
         for name, digest in sorted(per_file.items()):
@@ -195,9 +195,9 @@ def main(argv=None) -> int:
     if args.show_suppressed:
         ignore = load_ignore(Path(args.home).expanduser())
         if not ignore:
-            _emit("No .clawcheckignore entries found.")
+            _emit("No .clawseccheckignore entries found.")
         else:
-            _emit(f"{len(ignore)} suppressed entry/entries in .clawcheckignore:")
+            _emit(f"{len(ignore)} suppressed entry/entries in .clawseccheckignore:")
             ctx, findings, _ = audit(args.home, include_native=False)
             suppressed = [f for f in findings if getattr(f, "suppressed", False)]
             if suppressed:

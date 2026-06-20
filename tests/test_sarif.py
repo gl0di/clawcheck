@@ -1,4 +1,4 @@
-"""Tests for clawcheck.sarif.render_sarif.
+"""Tests for clawseccheck.sarif.render_sarif.
 
 Parses the returned JSON string and asserts structural correctness per SARIF 2.1.0.
 No file I/O is performed by render_sarif; all assertions are in-memory.
@@ -8,12 +8,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from clawcheck import audit
-from clawcheck.catalog import (
+from clawseccheck import audit
+from clawseccheck.catalog import (
     CRITICAL, FAIL, HIGH, PASS, UNKNOWN, WARN, Finding,
 )
-from clawcheck.sarif import render_sarif
-from clawcheck.scoring import compute
+from clawseccheck.sarif import render_sarif
+from clawseccheck.scoring import compute
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -71,9 +71,9 @@ def test_single_run():
 # tool.driver
 # ---------------------------------------------------------------------------
 
-def test_tool_driver_name_is_clawcheck():
+def test_tool_driver_name_is_clawseccheck():
     doc, _ = _parse([_finding("B2", PASS)])
-    assert doc["runs"][0]["tool"]["driver"]["name"] == "ClawCheck"
+    assert doc["runs"][0]["tool"]["driver"]["name"] == "ClawSecCheck"
 
 
 def test_tool_driver_version_propagated():
@@ -84,7 +84,7 @@ def test_tool_driver_version_propagated():
 def test_tool_driver_information_uri():
     doc, _ = _parse([_finding("B2", PASS)])
     uri = doc["runs"][0]["tool"]["driver"]["informationUri"]
-    assert "clawcheck" in uri.lower()
+    assert "clawseccheck" in uri.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ def test_rules_cover_known_id_b2():
 
 
 def test_rules_cover_catalog_ids():
-    from clawcheck.catalog import CATALOG
+    from clawseccheck.catalog import CATALOG
     doc, _ = _parse([_finding("B2", PASS)])
     rules = doc["runs"][0]["tool"]["driver"]["rules"]
     rule_ids = {r["id"] for r in rules}

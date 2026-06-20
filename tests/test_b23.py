@@ -1,8 +1,8 @@
 """B23 Approval-bypass directives in bootstrap."""
 from pathlib import Path
 
-from clawcheck.checks import check_approval_bypass
-from clawcheck.collector import Context
+from clawseccheck.checks import check_approval_bypass
+from clawseccheck.collector import Context
 
 
 def _ctx(bootstrap=None, cfg=None):

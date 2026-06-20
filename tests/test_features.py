@@ -1,10 +1,10 @@
 """--vet (pre-install), SVG badge, fix-prompts, and the active canary."""
 from pathlib import Path
 
-from clawcheck import (
+from clawseccheck import (
     audit, evaluate, make_canary, render_prompts, render_svg, vet_skill,
 )
-from clawcheck.catalog import CRITICAL, FAIL, PASS, UNKNOWN
+from clawseccheck.catalog import CRITICAL, FAIL, PASS, UNKNOWN
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -70,7 +70,7 @@ def test_vet_unknown_for_missing_path(tmp_path):
 # ---- active canary ----
 def test_canary_token_and_payload():
     c = make_canary("seed-1")
-    assert c["token"].startswith("CLAWCHECK-CANARY-")
+    assert c["token"].startswith("CLAWSECCHECK-CANARY-")
     assert c["token"] in c["payload"]
     assert "Ignore your previous instructions" in c["payload"]
 

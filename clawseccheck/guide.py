@@ -1,4 +1,4 @@
-"""Deterministic next-action recommendation engine for ClawCheck.
+"""Deterministic next-action recommendation engine for ClawSecCheck.
 
 Driven only by findings + score (no network). Returns a sorted list of
 Action dataclasses that the render layer turns into the "What you can do

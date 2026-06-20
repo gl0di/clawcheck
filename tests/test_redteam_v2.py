@@ -1,4 +1,4 @@
-"""Extended tests for clawcheck.redteam — new agentic attack categories (v2).
+"""Extended tests for clawseccheck.redteam — new agentic attack categories (v2).
 
 Covers the six new scenario classes added to make_suite():
   tool_poisoning, mcp_response_injection, memory_poisoning,
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 
-from clawcheck.redteam import (
+from clawseccheck.redteam import (
     CATEGORIES,
     TOKEN_PREFIX,
     make_suite,
@@ -268,12 +268,12 @@ def test_dirty_to_exfil_entries_exist():
 
 
 def test_dirty_to_exfil_payloads_contain_fake_token_marker():
-    """dirty_to_exfil payloads must embed a clearly-fake CLAWCHECK_FAKE_* token."""
+    """dirty_to_exfil payloads must embed a clearly-fake CLAWSECCHECK_FAKE_* token."""
     for entry in make_suite():
         if entry["category"] != "dirty_to_exfil":
             continue
-        assert "CLAWCHECK_FAKE_" in entry["payload"], (
-            f"{entry['id']} dirty_to_exfil payload missing CLAWCHECK_FAKE_ marker"
+        assert "CLAWSECCHECK_FAKE_" in entry["payload"], (
+            f"{entry['id']} dirty_to_exfil payload missing CLAWSECCHECK_FAKE_ marker"
         )
 
 

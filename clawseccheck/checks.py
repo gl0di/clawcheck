@@ -1285,7 +1285,7 @@ def check_monitoring(ctx: Context) -> Finding:
                     "No threat monitoring / detection is set up — if your agent gets compromised "
                     "(e.g. a malicious skill), nothing will alert you.",
                     "Install a monitoring skill (e.g. ClawSec or openclaw-security-monitor), wire "
-                    "audit logging to an alert channel, or schedule ClawCheck's own lightweight "
+                    "audit logging to an alert channel, or schedule ClawSecCheck's own lightweight "
                     "`audit.py --monitor` so changes don't go unnoticed.")
 
 

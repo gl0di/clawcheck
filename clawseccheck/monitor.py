@@ -6,8 +6,8 @@ store a compact snapshot, and alert on what CHANGED since last time — the mome
 threats actually appear (a new/modified installed skill, SOUL.md drift, a dropped
 score, a check going PASS -> FAIL).
 
-It is the only part of ClawCheck that persists state: a single JSON snapshot
-(default ~/.clawcheck/state.json). Everything else stays read-only.
+It is the only part of ClawSecCheck that persists state: a single JSON snapshot
+(default ~/.clawseccheck/state.json). Everything else stays read-only.
 """
 from __future__ import annotations
 
@@ -19,8 +19,8 @@ from .catalog import BY_ID, FAIL
 
 
 def _ignore_hash(home: Path) -> str:
-    """Return sha256 of the .clawcheckignore file contents, or '' if absent."""
-    p = home / ".clawcheckignore"
+    """Return sha256 of the .clawseccheckignore file contents, or '' if absent."""
+    p = home / ".clawseccheckignore"
     try:
         text = p.read_text(encoding="utf-8", errors="replace")
     except OSError:
@@ -28,7 +28,7 @@ def _ignore_hash(home: Path) -> str:
     return hashlib.sha256(text.encode("utf-8", "replace")).hexdigest()
 
 SNAPSHOT_VERSION = 1
-DEFAULT_STATE = "~/.clawcheck/state.json"
+DEFAULT_STATE = "~/.clawseccheck/state.json"
 
 
 def _h(text: str) -> str:
@@ -94,7 +94,7 @@ def diff(prev: dict | None, curr: dict) -> list[tuple[str, str]]:
     curr_ih = curr.get("ignore_hash", "")
     if prev_ih != curr_ih:
         alerts.append(("HIGH",
-                       "your .clawcheckignore changed — a suppression was added/removed "
+                       "your .clawseccheckignore changed — a suppression was added/removed "
                        "(review to ensure a real hole is not hidden)."))
 
     return alerts

@@ -1,7 +1,7 @@
-"""Tests for clawcheck.percentile — offline illustrative reference distribution."""
+"""Tests for clawseccheck.percentile — offline illustrative reference distribution."""
 from __future__ import annotations
 
-from clawcheck.percentile import REFERENCE, percentile, render_percentile
+from clawseccheck.percentile import REFERENCE, percentile, render_percentile
 
 
 # ---------------------------------------------------------------------------

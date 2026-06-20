@@ -1,4 +1,4 @@
-"""Baseline suppression via .clawcheckignore.
+"""Baseline suppression via .clawseccheckignore.
 
 Entries are either a bare check id (e.g. ``B14``) or a full fingerprint
 (e.g. ``B14:ab12cd34``).  Suppressed findings are excluded from the score,
@@ -19,12 +19,12 @@ def fingerprint(finding) -> str:
 
 
 def load_ignore(home: Path | str) -> set[str]:
-    """Read ``<home>/.clawcheckignore`` and return the set of entries.
+    """Read ``<home>/.clawseccheckignore`` and return the set of entries.
 
     Each non-blank, non-comment line is one entry (bare id or fingerprint).
     Returns an empty set when the file is absent.
     """
-    p = Path(home).expanduser() / ".clawcheckignore"
+    p = Path(home).expanduser() / ".clawseccheckignore"
     if not p.is_file():
         return set()
     entries: set[str] = set()

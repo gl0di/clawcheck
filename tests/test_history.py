@@ -1,4 +1,4 @@
-"""Tests for clawcheck/history.py — local score history (JSONL, chmod 600)."""
+"""Tests for clawseccheck/history.py — local score history (JSONL, chmod 600)."""
 from __future__ import annotations
 
 import sys
@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from clawcheck.history import DEFAULT_HISTORY, load, record, render_trend
+from clawseccheck.history import DEFAULT_HISTORY, load, record, render_trend
 
 
 # ---------------------------------------------------------------------------
@@ -117,7 +117,7 @@ def test_render_trend_empty_message():
 
 def test_render_trend_contains_header():
     rows = [{"date": "2026-06-15", "score": 72, "grade": "C"}]
-    assert "ClawCheck - Score Trend" in render_trend(rows)
+    assert "ClawSecCheck - Score Trend" in render_trend(rows)
 
 
 def test_render_trend_contains_dates_and_grades(tmp_path):
@@ -203,4 +203,4 @@ def test_render_trend_single_entry_full(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_default_history_constant():
-    assert DEFAULT_HISTORY == "~/.clawcheck/history.jsonl"
+    assert DEFAULT_HISTORY == "~/.clawseccheck/history.jsonl"

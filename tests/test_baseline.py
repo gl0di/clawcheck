@@ -1,9 +1,9 @@
-"""Baseline suppression via .clawcheckignore."""
-from clawcheck import audit
-from clawcheck.baseline import apply, fingerprint, load_ignore
-from clawcheck.catalog import CRITICAL, FAIL, HIGH, PASS, WARN, Finding
-from clawcheck.report import render_report
-from clawcheck.scoring import compute
+"""Baseline suppression via .clawseccheckignore."""
+from clawseccheck import audit
+from clawseccheck.baseline import apply, fingerprint, load_ignore
+from clawseccheck.catalog import CRITICAL, FAIL, HIGH, PASS, WARN, Finding
+from clawseccheck.report import render_report
+from clawseccheck.scoring import compute
 
 
 def _f(cid, severity, status, detail="d"):
@@ -17,7 +17,7 @@ def test_fingerprint_stable_and_detail_sensitive():
 
 
 def test_load_ignore_parsing(tmp_path):
-    (tmp_path / ".clawcheckignore").write_text("# comment\n\nB14\nB2:ab12cd34\n  B7  \n")
+    (tmp_path / ".clawseccheckignore").write_text("# comment\n\nB14\nB2:ab12cd34\n  B7  \n")
     assert load_ignore(tmp_path) == {"B14", "B2:ab12cd34", "B7"}
     assert load_ignore(tmp_path / "nope") == set()
 
@@ -44,14 +44,14 @@ def test_suppressed_excluded_from_report():
     supp.suppressed = True
     out = render_report([supp], compute([supp]))
     assert "No issues found" in out
-    assert "1 finding(s) suppressed via .clawcheckignore" in out
+    assert "1 finding(s) suppressed via .clawseccheckignore" in out
 
 
-def test_audit_applies_clawcheckignore(tmp_path):
+def test_audit_applies_clawseccheckignore(tmp_path):
     (tmp_path / "openclaw.json").write_text("{}")
     _, findings, _ = audit(tmp_path)
     target = next(f for f in findings if f.status == WARN)
-    (tmp_path / ".clawcheckignore").write_text(target.id + "\n")
+    (tmp_path / ".clawseccheckignore").write_text(target.id + "\n")
     _, findings2, _ = audit(tmp_path)
     assert next(f for f in findings2 if f.id == target.id).suppressed
 

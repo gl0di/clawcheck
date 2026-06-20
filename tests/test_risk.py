@@ -1,4 +1,4 @@
-"""Tests for the risk engine (clawcheck/risk.py).
+"""Tests for the risk engine (clawseccheck/risk.py).
 
 Covers:
   - Each rule firing on a crafted config
@@ -15,13 +15,13 @@ from pathlib import Path
 
 import pytest
 
-from clawcheck.collector import Context
-from clawcheck.checks import run_all
-from clawcheck.scoring import compute
-from clawcheck.risk import RiskPath, risk_paths, render_risk_paths
-from clawcheck.report import render_json, render_report
-from clawcheck.catalog import CRITICAL, HIGH, MEDIUM, FAIL, Finding
-from clawcheck.cli import main
+from clawseccheck.collector import Context
+from clawseccheck.checks import run_all
+from clawseccheck.scoring import compute
+from clawseccheck.risk import RiskPath, risk_paths, render_risk_paths
+from clawseccheck.report import render_json, render_report
+from clawseccheck.catalog import CRITICAL, HIGH, MEDIUM, FAIL, Finding
+from clawseccheck.cli import main
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -173,7 +173,7 @@ def test_risk04_dangerous_name_matching_plus_elevated():
 
 
 def test_risk04_b30_fail_plus_exec():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b30 = Finding(
         id="B30", title="Mutable identity", severity=HIGH,
         status=FAIL, detail="test", fix="test",
@@ -214,7 +214,7 @@ def test_risk05_ssrf_policy_plus_secrets():
 
 
 def test_risk05_b38_fail_plus_secrets():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b38 = Finding(
         id="B38", title="Browser SSRF", severity=HIGH,
         status=FAIL, detail="test", fix="test",
@@ -240,7 +240,7 @@ def test_risk05_ssrf_no_secrets_no_fire():
 # ──────────────────────────────────────────────────────────────────────────────
 
 def test_risk06_b32_fail_plus_open_channel():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b32 = Finding(
         id="B32", title="Control plane exposed", severity=CRITICAL,
         status=FAIL, detail="test", fix="test",
@@ -256,7 +256,7 @@ def test_risk06_b32_fail_plus_open_channel():
 
 
 def test_risk06_b32_fail_no_open_surface_no_fire():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b32 = Finding(
         id="B32", title="Control plane exposed", severity=CRITICAL,
         status=FAIL, detail="test", fix="test",
@@ -274,7 +274,7 @@ def test_risk06_b32_fail_no_open_surface_no_fire():
 # ──────────────────────────────────────────────────────────────────────────────
 
 def test_risk07_b20_fail_plus_exec_no_approval():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b20 = Finding(
         id="B20", title="Bootstrap writable", severity=HIGH,
         status=FAIL, detail="test", fix="test",
@@ -290,7 +290,7 @@ def test_risk07_b20_fail_plus_exec_no_approval():
 
 
 def test_risk07_b22_fail_plus_exec_no_approval():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b22 = Finding(
         id="B22", title="Self-modification", severity=HIGH,
         status=FAIL, detail="test", fix="test",
@@ -304,7 +304,7 @@ def test_risk07_b22_fail_plus_exec_no_approval():
 
 
 def test_risk07_with_approval_no_fire():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b20 = Finding(
         id="B20", title="Bootstrap writable", severity=HIGH,
         status=FAIL, detail="test", fix="test",
@@ -336,7 +336,7 @@ def test_risk08_dm_scope_main_plus_group_channel():
 
 
 def test_risk08_b39_fail_plus_group_channel():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b39 = Finding(
         id="B39", title="Session cross-user", severity=MEDIUM,
         status=FAIL, detail="test", fix="test",
@@ -383,7 +383,7 @@ def test_minimal_config_no_paths():
 # ──────────────────────────────────────────────────────────────────────────────
 
 def test_paths_sorted_critical_before_high_before_medium():
-    from clawcheck.catalog import Finding
+    from clawseccheck.catalog import Finding
     fake_b32 = Finding(
         id="B32", title="Control plane exposed", severity=CRITICAL,
         status=FAIL, detail="test", fix="test",
@@ -522,8 +522,8 @@ def test_render_json_includes_risk_paths_key(tmp_path):
         "tools": {"exec": {"security": "full"}},
         "agents": {"defaults": {"sandbox": {"mode": "off"}}},
     }))
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     ctx, findings, score = audit(tmp_path)
     paths = compute_paths(ctx, findings)
     out = render_json(findings, score, risk=paths)
@@ -542,7 +542,7 @@ def test_render_json_includes_risk_paths_key(tmp_path):
 
 
 def test_render_json_risk_none_omits_key():
-    from clawcheck import audit
+    from clawseccheck import audit
     ctx, findings, score = audit(FIXTURES / "home_safe")
     out = render_json(findings, score)
     data = json.loads(out)
@@ -550,7 +550,7 @@ def test_render_json_risk_none_omits_key():
 
 
 def test_render_json_risk_empty_list_includes_key():
-    from clawcheck import audit
+    from clawseccheck import audit
     ctx, findings, score = audit(FIXTURES / "home_safe")
     out = render_json(findings, score, risk=[])
     data = json.loads(out)
@@ -589,8 +589,8 @@ def test_score_unchanged_with_and_without_risk(tmp_path):
         "agents": {"defaults": {"sandbox": {"mode": "off"}}},
         "gateway": {"auth": {"password": "s3cr3t"}},
     }))
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     ctx, findings, score_without = audit(tmp_path)
     paths = compute_paths(ctx, findings)
 
@@ -605,8 +605,8 @@ def test_score_unchanged_with_and_without_risk(tmp_path):
 
 
 def test_score_unchanged_vuln_fixture():
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     ctx, findings, score = audit(FIXTURES / "home_vuln")
     compute_paths(ctx, findings)  # smoke: must run without affecting the score
     # Score is driven only by findings, not by risk paths
@@ -616,8 +616,8 @@ def test_score_unchanged_vuln_fixture():
 
 
 def test_score_unchanged_safe_fixture():
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     ctx, findings, score = audit(FIXTURES / "home_safe")
     compute_paths(ctx, findings)  # smoke: must run without affecting the score
     score2 = compute(findings)
@@ -630,8 +630,8 @@ def test_score_unchanged_safe_fixture():
 # ──────────────────────────────────────────────────────────────────────────────
 
 def test_render_report_with_risk_includes_section():
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     ctx, findings, score = audit(FIXTURES / "home_vuln")
     paths = compute_paths(ctx, findings)
     out_with = render_report(findings, score, risk=paths)
@@ -646,14 +646,14 @@ def test_render_report_with_risk_includes_section():
 
 def test_render_report_without_risk_byte_identical():
     """render_report(risk=None) must be byte-identical to render_report() (no kwarg)."""
-    from clawcheck import audit
+    from clawseccheck import audit
     ctx, findings, score = audit(FIXTURES / "home_safe")
     assert render_report(findings, score, risk=None) == render_report(findings, score)
 
 
 def test_render_json_without_risk_byte_identical():
     """render_json(risk=None) must be byte-identical to render_json() (no kwarg)."""
-    from clawcheck import audit
+    from clawseccheck import audit
     ctx, findings, score = audit(FIXTURES / "home_safe")
     assert render_json(findings, score, risk=None) == render_json(findings, score)
 
@@ -677,8 +677,8 @@ FLEET_CONFIGS = [
 @pytest.mark.parametrize("cfg_path", [p for p in FLEET_CONFIGS if Path(p).is_file()])
 def test_fleet_config_score_unaffected_by_risk(cfg_path):
     """Risk paths are additive; the A-F score must not change."""
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     home = str(Path(cfg_path).parent)
     ctx, findings, score = audit(home)
     compute_paths(ctx, findings)  # smoke: must run without affecting the score
@@ -690,8 +690,8 @@ def test_fleet_config_score_unaffected_by_risk(cfg_path):
 @pytest.mark.parametrize("cfg_path", [p for p in FLEET_CONFIGS if Path(p).is_file()])
 def test_fleet_config_risk_paths_are_list(cfg_path):
     """risk_paths() always returns a list (possibly empty) for fleet configs."""
-    from clawcheck import audit
-    from clawcheck.risk import risk_paths as compute_paths
+    from clawseccheck import audit
+    from clawseccheck.risk import risk_paths as compute_paths
     home = str(Path(cfg_path).parent)
     ctx, findings, score = audit(home)
     paths = compute_paths(ctx, findings)

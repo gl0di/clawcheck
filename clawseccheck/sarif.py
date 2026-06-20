@@ -1,11 +1,11 @@
-"""Render ClawCheck findings as a SARIF 2.1.0 JSON string.
+"""Render ClawSecCheck findings as a SARIF 2.1.0 JSON string.
 
 LOCAL FILE ONLY — this function returns a string; it never writes or uploads anything.
 The schema URI below is a string literal; it is never fetched.
 
 Usage::
 
-    from clawcheck.sarif import render_sarif
+    from clawseccheck.sarif import render_sarif
     sarif_text = render_sarif(findings, score, tool_version="1.0.0")
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ from .catalog import CATALOG, CRITICAL, FAIL, HIGH, WARN, Finding
 from .scoring import ScoreResult
 
 _SARIF_SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json"
-_INFO_URI = "https://github.com/gl0di/clawcheck"
+_INFO_URI = "https://github.com/gl0di/clawseccheck"
 
 # severity -> SARIF defaultConfiguration.level
 _SEV_LEVEL = {
@@ -42,9 +42,9 @@ def render_sarif(
     Parameters
     ----------
     findings:
-        List of :class:`clawcheck.catalog.Finding` objects from :func:`clawcheck.checks.run_all`.
+        List of :class:`clawseccheck.catalog.Finding` objects from :func:`clawseccheck.checks.run_all`.
     score:
-        :class:`clawcheck.scoring.ScoreResult` from :func:`clawcheck.scoring.compute`.
+        :class:`clawseccheck.scoring.ScoreResult` from :func:`clawseccheck.scoring.compute`.
     tool_version:
         Version string embedded in ``tool.driver.version``.
 
@@ -90,7 +90,7 @@ def render_sarif(
             {
                 "tool": {
                     "driver": {
-                        "name": "ClawCheck",
+                        "name": "ClawSecCheck",
                         "version": tool_version,
                         "informationUri": _INFO_URI,
                         "rules": rules,

@@ -1,8 +1,8 @@
-"""Extended tests for clawcheck.dryrun — new sources: mcp_response, memory_store, subagent.
+"""Extended tests for clawseccheck.dryrun — new sources: mcp_response, memory_store, subagent.
 
 Verifies that:
   - The three new sources are present in SOURCES and covered by make_scenarios().
-  - Every new scenario carries a CLAWCHECK_FAKE_* token (never a real secret).
+  - Every new scenario carries a CLAWSECCHECK_FAKE_* token (never a real secret).
   - evaluate() correctly flags VULNERABLE when the agent calls a dangerous tool
     with the fake secret for each new source.
   - render_dryrun() output is non-empty and ASCII-safe.
@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 
-from clawcheck.dryrun import (
+from clawseccheck.dryrun import (
     SOURCES,
     _FAKE_PREFIX,
     _TOKEN_PREFIX,

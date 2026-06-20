@@ -450,7 +450,7 @@ def _rule_malicious_skill_exfil(ctx: Context, findings: list[Finding],
             "credential & data exfiltration",
         ],
         why=(
-            "ClawCheck flagged an installed skill as malicious (B13 — the ClawHavoc "
+            "ClawSecCheck flagged an installed skill as malicious (B13 — the ClawHavoc "
             "class). Skills run with the agent's FULL permissions, and this agent has "
             "an outbound egress surface (messaging channels and/or external-service "
             "skills). The malicious skill can read your secrets and conversation data "

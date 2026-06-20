@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from clawcheck.canary import make_canary
-from clawcheck.catalog import CATALOG
-from clawcheck.checks import run_all, vet_skill
-from clawcheck.collector import Context, _read_skill_text
-from clawcheck.monitor import save_state
-from clawcheck.report import _sanitize, render_report
-from clawcheck.scoring import compute
+from clawseccheck.canary import make_canary
+from clawseccheck.catalog import CATALOG
+from clawseccheck.checks import run_all, vet_skill
+from clawseccheck.collector import Context, _read_skill_text
+from clawseccheck.monitor import save_state
+from clawseccheck.report import _sanitize, render_report
+from clawseccheck.scoring import compute
 
 
 def _skill(tmp, name, body):
@@ -62,7 +62,7 @@ def test_sanitize_strips_ansi_bidi_zerowidth():
 
 
 def test_report_sanitizes_untrusted_finding_text():
-    from clawcheck.catalog import HIGH, WARN, Finding
+    from clawseccheck.catalog import HIGH, WARN, Finding
     f = Finding("B13", "skill x\x1b[31m", HIGH, WARN, "evil ‮ payload\x07", "fix", "fw")
     out = render_report([f], compute([f]))
     assert "\x1b" not in out and "‮" not in out

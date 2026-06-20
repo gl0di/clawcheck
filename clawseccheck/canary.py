@@ -14,7 +14,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 
-TOKEN_PREFIX = "CLAWCHECK-CANARY-"
+TOKEN_PREFIX = "CLAWSECCHECK-CANARY-"
 
 
 def make_canary(seed: str | None = None) -> dict:
@@ -42,7 +42,7 @@ def evaluate(agent_reply: str, token: str) -> str:
 
 
 def render_canary(canary: dict, ascii_only: bool = False) -> str:
-    title = "ClawCheck - active canary self-test" + ("" if ascii_only else " 🧪")
+    title = "ClawSecCheck - active canary self-test" + ("" if ascii_only else " 🧪")
     lines = [
         title,
         "=" * 36,

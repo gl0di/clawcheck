@@ -1,7 +1,7 @@
 """Windows / portability behaviour: no false POSIX-perm findings, ASCII output."""
 from pathlib import Path
 
-from clawcheck import audit, render_card, render_json, render_report
+from clawseccheck import audit, render_card, render_json, render_report
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -13,7 +13,7 @@ def _by_id(findings):
 def test_posix_perm_checks_are_skipped_on_windows(monkeypatch, tmp_path):
     # NTFS uses ACLs, not POSIX mode bits — we must not raise a false
     # "world-readable" finding on Windows even if st_mode looks loose.
-    from clawcheck import checks
+    from clawseccheck import checks
     # simulate Windows without touching the global os.name (which pathlib reads)
     monkeypatch.setattr(checks, "_is_posix", lambda: False)
 
@@ -37,7 +37,7 @@ def test_ascii_rendering_is_pure_ascii():
     card.encode("ascii")
     render_json(findings, score).encode("ascii")
     assert "[X]" in report  # ascii status icon for a FAIL is present
-    assert "ClawCheck" in card
+    assert "ClawSecCheck" in card
 
 
 def test_unicode_rendering_still_default():

@@ -12,9 +12,9 @@ from pathlib import Path
 
 import pytest
 
-from clawcheck import audit
-from clawcheck.i18n import PHRASES, tp
-from clawcheck.report import render_report
+from clawseccheck import audit
+from clawseccheck.i18n import PHRASES, tp
+from clawseccheck.report import render_report
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 

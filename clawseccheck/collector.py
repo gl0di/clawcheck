@@ -24,7 +24,7 @@ SKILL_DIRS = ["skills", "workspace/skills", "workspace-home/skills",
               "workspace-work/skills", ".agents/skills"]
 _SKILL_TEXT_EXT = {".md", ".sh", ".bash", ".zsh", ".py", ".js", ".ts", ".mjs",
                    ".cjs", ".json", ".txt", ".ps1"}
-_OWN_SKILL_NAMES = {"clawcheck", "clawshield"}
+_OWN_SKILL_NAMES = {"clawseccheck", "clawshield"}
 _MAX_SKILLS = 300
 _MAX_BYTES_PER_SKILL = 60_000
 _MAX_FILE_BYTES = 200_000

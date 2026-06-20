@@ -2,8 +2,8 @@
 import os
 from pathlib import Path
 
-from clawcheck.checks import check_path_safety
-from clawcheck.collector import Context
+from clawseccheck.checks import check_path_safety
+from clawseccheck.collector import Context
 
 
 def _ctx():
@@ -14,7 +14,7 @@ def _ctx():
 
 # ---- non-POSIX -> UNKNOWN ----
 def test_c5_non_posix_unknown(monkeypatch):
-    from clawcheck import checks
+    from clawseccheck import checks
     monkeypatch.setattr(checks, "_is_posix", lambda: False)
     result = check_path_safety(_ctx())
     assert result.status == "UNKNOWN"
@@ -24,7 +24,7 @@ def test_c5_non_posix_unknown(monkeypatch):
 # ---- openclaw not on PATH -> UNKNOWN ----
 def test_c5_not_on_path_unknown(monkeypatch):
     import shutil
-    from clawcheck import checks
+    from clawseccheck import checks
     monkeypatch.setattr(checks, "_is_posix", lambda: True)
     monkeypatch.setattr(shutil, "which", lambda name: None)
     result = check_path_safety(_ctx())
@@ -35,7 +35,7 @@ def test_c5_not_on_path_unknown(monkeypatch):
 # ---- binary dir is group/world-writable -> WARN ----
 def test_c5_writable_binary_dir_warns(monkeypatch, tmp_path):
     import shutil
-    from clawcheck import checks
+    from clawseccheck import checks
 
     # Create a fake openclaw binary in a world-writable dir.
     bin_dir = tmp_path / "bin"
@@ -62,7 +62,7 @@ def test_c5_writable_binary_dir_warns(monkeypatch, tmp_path):
 # ---- earlier PATH dir is group/world-writable -> WARN ----
 def test_c5_writable_earlier_path_dir_warns(monkeypatch, tmp_path):
     import shutil
-    from clawcheck import checks
+    from clawseccheck import checks
 
     # A tight dir for the real binary.
     bin_dir = tmp_path / "bin"
@@ -92,7 +92,7 @@ def test_c5_writable_earlier_path_dir_warns(monkeypatch, tmp_path):
 # ---- later PATH dir writable (AFTER openclaw dir) -> PASS (not a shadow risk) ----
 def test_c5_writable_later_path_dir_passes(monkeypatch, tmp_path):
     import shutil
-    from clawcheck import checks
+    from clawseccheck import checks
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -120,7 +120,7 @@ def test_c5_writable_later_path_dir_passes(monkeypatch, tmp_path):
 # ---- all dirs tight -> PASS ----
 def test_c5_tight_path_passes(monkeypatch, tmp_path):
     import shutil
-    from clawcheck import checks
+    from clawseccheck import checks
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -145,7 +145,7 @@ def test_c5_tight_path_passes(monkeypatch, tmp_path):
 # ---- advisory: scored=False ----
 def test_c5_is_not_scored(monkeypatch, tmp_path):
     import shutil
-    from clawcheck import checks
+    from clawseccheck import checks
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()

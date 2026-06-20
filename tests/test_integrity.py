@@ -1,12 +1,12 @@
-"""Tests for clawcheck.integrity — self-integrity / tamper-detection digest."""
+"""Tests for clawseccheck.integrity — self-integrity / tamper-detection digest."""
 from __future__ import annotations
 
 import hashlib
 
 import pytest
 
-from clawcheck.integrity import package_digest
-from clawcheck.cli import main
+from clawseccheck.integrity import package_digest
+from clawseccheck.cli import main
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ def test_cli_verify_self_prints_combined_digest(capsys):
 
 
 def test_cli_verify_self_prints_version(capsys):
-    from clawcheck import __version__
+    from clawseccheck import __version__
     main(["--verify-self"])
     out = capsys.readouterr().out
     assert __version__ in out

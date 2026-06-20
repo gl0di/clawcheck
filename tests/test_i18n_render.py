@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clawcheck import audit
-from clawcheck.report import render_card, render_html, render_monitor, render_prompts, render_report
+from clawseccheck import audit
+from clawseccheck.report import render_card, render_html, render_monitor, render_prompts, render_report
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
@@ -90,20 +90,20 @@ class TestRenderReportLang:
 
     def test_he_clean_report_contains_no_issues_hebrew(self):
         """Use an empty findings list to force the 'no issues' path."""
-        from clawcheck.scoring import ScoreResult
+        from clawseccheck.scoring import ScoreResult
         score = ScoreResult(score=100, grade="A", capped=False, raw_score=100,
                             failed_critical=0, failed_high=0)
         out = render_report([], score, lang="he")
         # STRINGS["report.no_issues"]["he"]
-        assert "ClawCheck לא מצא בעיות" in out
+        assert "ClawSecCheck לא מצא בעיות" in out
 
     def test_en_clean_report_unchanged(self):
         """Use an empty findings list to force the 'no issues' path."""
-        from clawcheck.scoring import ScoreResult
+        from clawseccheck.scoring import ScoreResult
         score = ScoreResult(score=100, grade="A", capped=False, raw_score=100,
                             failed_critical=0, failed_high=0)
         out_default = render_report([], score)
-        assert "No issues found by ClawCheck" in out_default
+        assert "No issues found by ClawSecCheck" in out_default
 
 
 # ---------------------------------------------------------------------------
@@ -124,8 +124,8 @@ class TestRenderCardLang:
     def test_he_contains_hebrew_audited_by(self):
         findings, score = _audit_vuln()
         out = render_card(score, findings, lang="he")
-        # STRINGS["card.audited_by"]["he"] = "נבדק על ידי ClawCheck"
-        assert "נבדק על ידי ClawCheck" in out
+        # STRINGS["card.audited_by"]["he"] = "נבדק על ידי ClawSecCheck"
+        assert "נבדק על ידי ClawSecCheck" in out
 
     def test_en_contains_english_security_label(self):
         findings, score = _audit_vuln()
@@ -135,7 +135,7 @@ class TestRenderCardLang:
     def test_en_contains_english_audited_by(self):
         findings, score = _audit_vuln()
         out = render_card(score, findings, lang="en")
-        assert "audited by ClawCheck" in out
+        assert "audited by ClawSecCheck" in out
 
     def test_box_layout_preserved_in_he(self):
         """Box-drawing characters must still be present for RTL output."""
@@ -167,7 +167,7 @@ class TestRenderMonitorLang:
     def test_he_title_is_hebrew(self):
         score = self._make_score()
         out = render_monitor([], score, lang="he")
-        # STRINGS["monitor.title"]["he"] = "ClawCheck - מנטור איומים"
+        # STRINGS["monitor.title"]["he"] = "ClawSecCheck - מנטור איומים"
         assert "מנטור איומים" in out
 
     def test_he_no_threats_is_hebrew(self):
@@ -192,7 +192,7 @@ class TestRenderMonitorLang:
     def test_en_title_unchanged(self):
         score = self._make_score()
         out = render_monitor([], score, lang="en")
-        assert "ClawCheck - Threat Monitor" in out
+        assert "ClawSecCheck - Threat Monitor" in out
 
     def test_en_no_threats_unchanged(self):
         score = self._make_score()
@@ -236,7 +236,7 @@ class TestRenderPromptsLang:
     def test_en_title_unchanged(self):
         findings, _ = _audit_vuln()
         out = render_prompts(findings, lang="en")
-        assert "ClawCheck - copy-paste fix prompts" in out
+        assert "ClawSecCheck - copy-paste fix prompts" in out
 
     def test_en_nothing_to_fix_unchanged(self):
         findings, _ = _audit_safe()
@@ -296,11 +296,11 @@ class TestRenderHtmlLang:
         findings, score = _audit_safe()
         out = render_html(findings, score, lang="he")
         # STRINGS["html.h1"]["he"]
-        assert "דוח ביקורת אבטחה של ClawCheck" in out
+        assert "דוח ביקורת אבטחה של ClawSecCheck" in out
 
     def test_he_no_issues_is_hebrew(self):
         """Use an empty findings list to force the 'no issues' HTML path."""
-        from clawcheck.scoring import ScoreResult
+        from clawseccheck.scoring import ScoreResult
         score = ScoreResult(score=100, grade="A", capped=False, raw_score=100,
                             failed_critical=0, failed_high=0)
         out = render_html([], score, lang="he")
@@ -338,7 +338,7 @@ class TestRenderHtmlLang:
 
     def test_html_still_escapes_in_he(self):
         """HTML escaping must work correctly regardless of lang."""
-        from clawcheck.catalog import FAIL, Finding
+        from clawseccheck.catalog import FAIL, Finding
         findings = [
             Finding(
                 id="TEST1",

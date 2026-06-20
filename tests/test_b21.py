@@ -1,8 +1,8 @@
 """B21 — tool-output / retrieved-content trust boundary tests."""
 from pathlib import Path
 
-from clawcheck.checks import check_tool_output_trust
-from clawcheck.collector import Context
+from clawseccheck.checks import check_tool_output_trust
+from clawseccheck.collector import Context
 
 
 def _ctx(cfg=None, bootstrap=None, skills=None, home="/x"):
