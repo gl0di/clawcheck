@@ -4,8 +4,19 @@ Reads the YAML as plain text — no pyyaml dependency (stdlib only).
 """
 from pathlib import Path
 
+import pytest
+
 WORKFLOW_PATH = (
     Path(__file__).resolve().parents[1] / ".github" / "workflows" / "clawhub-publish.yml"
+)
+
+# The published skill package ships without .github/ (CI files are repo-only), so these
+# workflow-validation tests have nothing to read there. Skip — don't FAIL — when the file
+# is absent, so the suite stays green whether run from the source repo or a packaged install.
+pytestmark = pytest.mark.skipif(
+    not WORKFLOW_PATH.exists(),
+    reason="CI workflow file not present (packaged skill ships without .github/); "
+           "publish-workflow tests run only from the source repo.",
 )
 
 

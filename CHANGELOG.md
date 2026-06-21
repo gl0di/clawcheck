@@ -3,6 +3,19 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [0.30.1] — 2026-06-21
+
+Test-portability fix found by a field run of the packaged skill.
+
+### Fixed
+- **`test_publish_workflow.py` failed in a packaged install.** The published skill ships
+  without `.github/` (CI files are repo-only), so the 4 workflow-validation tests raised
+  `FileNotFoundError` and showed as **failures** when the suite was run from an installed
+  skill — an alarming "tests failing" signal for a security tool whose ethos is "run the
+  suite, 100% pass". They now **skip** (not fail) when the workflow file is absent, so the
+  suite is green whether run from the source repo (tests execute) or a packaged install
+  (tests skip). No functional/source change.
+
 ## [0.30.0] — 2026-06-21
 
 First **field-discovered** accuracy fix: a live agent run (the v0.26 attestation round-trip,
