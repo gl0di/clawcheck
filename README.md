@@ -401,17 +401,18 @@ grade + score + trifecta ratio — never the findings** (sharing must not hand a
 
 ## Public API & stability
 
-ClawSecCheck is pre-1.0 (`0.x`): per the release protocol, **anything may change with a minor
-bump**. This section declares what will become the stable contract at **1.0.0** — the point at
-which breaking it requires a **major** version bump (SemVer).
+As of **1.0.0**, the following is a **frozen contract**: breaking it requires a **major** version
+bump (SemVer). The freeze was cut after the attestation layer settled, an adversarial review, and
+four field runs whose every finding was fixed or deliberately documented — with zero hard false
+positives on real configs.
 
-**Will be stable at 1.0 (the contract):**
+**Frozen contract (breaking these → major bump):**
 - **CLI flags** and their documented meaning (`--json`, `--sarif`, `--card`, `--monitor`,
   `--fail-under`, `--exit-code`, …).
 - **`--json` schema:** top-level `score`, `grade`, `capped`, `raw_score`, `trifecta`,
   `findings[]`, `next_actions[]`; each finding's `id`, `title`, `severity`, `status`, `detail`,
   `fix`, `framework`, `confidence`, `evidence`.
-- **SARIF 2.1.0 output** shape (rule ids = check ids; `properties.confidence`).
+- **SARIF 2.1.0 output** shape (rule ids = check ids; `properties.confidence` + `.evidence`).
 - **Public Python API:** `clawseccheck.audit(...) -> (ctx, findings, ScoreResult)` and the
   `Finding` field names.
 - **Check IDs** (`A1`, `B1–B54`, `C3–C5`, `RISK-01..10`): an id, once shipped, keeps its meaning.
@@ -419,18 +420,16 @@ which breaking it requires a **major** version bump (SemVer).
 - **Scoring bands:** A 90+ · B 80–89 · C 70–79 · D 50–69 · F <50; `UNKNOWN` never scores; advisory
   checks (`scored=False`) never move the grade.
 
-**Experimental (may still change before 1.0, by design):**
+**Explicitly experimental within 1.x (may change without a major bump, by design):**
 - The **attestation layer**: the `clawseccheck-attest/1` self-report schema (note the `/1` — it is
   explicitly versioned to evolve), the `--ask`/`--attest` flow, the B43 **verb→blast-radius
   taxonomy**, and B44. The `ATTESTED` confidence tier exists to mark exactly this: a self-report is
-  weaker than a config fact, advisory, and never overrides one.
-
-1.0.0 ships when the attestation surface settles, real-world use confirms the zero-false-positive
-property holds, and this contract is frozen.
+  weaker than a config fact, advisory, and never overrides one. Freezing the newest surface now
+  would over-commit, so it stays flexible under this label until it has had broader real-world use.
 
 ## Status
 
-v0.31. Read-only checks A1/B1–B26/B30/B31/B32/B33/B38/B39/B41–B44/B50–B54/C3–C5 (incl. write-protection,
+v1.0. Read-only checks A1/B1–B26/B30/B31/B32/B33/B38/B39/B41–B44/B50–B54/C3–C5 (incl. write-protection,
 self-modification, approval-bypass, deep MCP, update/pinning hygiene, sender identity strength,
 control-plane mutation reachability, browser/SSRF exposure, session visibility/cross-user leak, a
 **Host Watch Posture** ring — is the machine the agent runs on watched at all: network IDS, host

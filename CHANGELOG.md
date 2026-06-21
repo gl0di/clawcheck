@@ -3,6 +3,38 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.0.0] — 2026-06-21
+
+**API freeze.** The mature core is now a stable contract: breaking it requires a major
+version bump (SemVer). No code change from 0.31.1 — this release is the commitment, reached
+after the attestation layer settled, an adversarial review, and four field runs whose every
+finding was fixed or deliberately documented (EXEC class, test-portability, evidence
+surfacing, B16 wording), with **zero hard false positives on real configs**.
+
+### Frozen contract (breaking these → major bump)
+- **CLI flags** and their documented meaning.
+- **`--json` schema:** `score`, `grade`, `capped`, `raw_score`, `trifecta`, `findings[]`,
+  `next_actions[]`; each finding's `id`, `title`, `severity`, `status`, `detail`, `fix`,
+  `framework`, `confidence`, `evidence`.
+- **SARIF 2.1.0** output shape (rule ids = check ids; `properties.confidence` + `.evidence`).
+- **Public Python API:** `clawseccheck.audit(...) -> (ctx, findings, ScoreResult)` and the
+  `Finding` field names.
+- **Check IDs** (`A1`, `B1–B54`, `C3–C5`, `RISK-01..10`) — an id keeps its meaning once shipped.
+- **Vocabularies:** status `PASS|WARN|FAIL|UNKNOWN`, confidence `HIGH|MEDIUM|LOW|ATTESTED`.
+- **Scoring bands:** A 90+ · B 80–89 · C 70–79 · D 50–69 · F <50; `UNKNOWN` never scores;
+  advisory checks (`scored=False`) never move the grade.
+
+### Explicitly EXPERIMENTAL within 1.x (may change without a major bump)
+- The **attestation layer**: the `clawseccheck-attest/1` self-report schema (the `/1` is
+  versioned to evolve), the `--ask`/`--attest` flow, the B43 verb→blast-radius taxonomy, and
+  B44. The `ATTESTED` confidence tier marks exactly this — weaker than a config fact, advisory,
+  never overriding one. Freezing the newest surface now would over-commit; it stays flexible
+  under a clear label.
+
+### Unchanged guarantees
+- Local-only, zero-network, read-only by default; stdlib-only, Python 3.9+; no fabricated
+  facts; zero false-positive FAILs on real configs.
+
 ## [0.31.1] — 2026-06-21
 
 Honesty fix found by a round-4 breadth run (full audit of two real configs — **zero hard
