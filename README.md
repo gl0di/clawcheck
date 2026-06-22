@@ -248,6 +248,11 @@ permissions, a malicious *update* is a real supply-chain risk — so each releas
 and the source is public to read **before** updating. Prefer reviewing/pinning a tag over blind
 auto-update for anything security-sensitive.
 
+> **First call after an update looks empty?** Some OpenClaw versions reload a freshly-updated
+> skill lazily, so the *first* invocation right after an update can return nothing; just run it
+> again. This is an OpenClaw skill-reload timing artifact on the runtime side, not the audit —
+> confirm the engine is live with `clawseccheck --verify-self`.
+
 **Staleness reminder (offline).** A stale security scanner is itself a risk, so the default report
 may print a one-line "your build may be out of date" notice. It is **100% offline** — it reads only
 the local clock against the baked-in build date, plus an optional local hint file

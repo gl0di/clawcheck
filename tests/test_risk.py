@@ -481,6 +481,18 @@ def test_render_risk_paths_shows_severity_tag():
     assert "[HIGH]" in out
 
 
+def test_render_risk_paths_shows_id():
+    """The human-readable risk-paths output includes the RISK-NN id (was JSON-only)."""
+    p = RiskPath(
+        id="RISK-11", severity=HIGH,
+        title="Cross-agent trifecta reassembly (confused deputy)",
+        chain=["a", "b", "c"],
+        why="w", fix="f",
+    )
+    out = render_risk_paths([p])
+    assert "RISK-11" in out
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # CLI --risk-paths flag
 # ──────────────────────────────────────────────────────────────────────────────

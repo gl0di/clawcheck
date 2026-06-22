@@ -40,6 +40,16 @@ RULE_EXAMPLES: list[tuple[str, str]] = [
         "mono: holds all 3 legs",
         "mono",
     ),
+    # B47 evidence: chain (data) preserved, prefix translated
+    (
+        "reassembly chain: researcher → vault → sender",
+        "researcher",
+    ),
+    # B47 evidence: weakest-tier label (enum key stays Latin, survives in he)
+    (
+        "weakest edge tier: raw/unknown (passthrough)",
+        "raw/unknown",
+    ),
     # B1: secrets count + perms
     (
         "3 secret(s) in config and openclaw.json is group/world-readable (644)",

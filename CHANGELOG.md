@@ -3,6 +3,26 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.5.1] — 2026-06-22
+
+**Hebrew completeness for B47 evidence.** A third field round confirmed the recurring pattern: a new
+check's evidence bullets render in English under `--lang he` until they get translation rules (the
+1.4.1 routing is in place; the per-check prose rules were missing). B47's evidence is now localized,
+and adding an evidence rule alongside each new check that emits evidence prose is now standing practice.
+
+### Fixed
+- **B47 evidence bullets are localized.** Added `DETAIL_RULES` patterns for `reassembly chain: …`,
+  `reachable via walls only: …` (prefix translated, the agent-name chain preserved verbatim) and the
+  three `weakest edge tier: …` enum values (the `schema`/`filtered`/`raw` key stays Latin like other
+  technical tokens; the gloss is Hebrew). `detail`/`fix` were already translated.
+
+### Changed
+- **`--risk-paths` text output now shows the RISK id.** Each path renders as `[SEV] RISK-NN: title`
+  (the id was previously only in `--json`), so a path referenced by id can be cross-referenced in the
+  human report.
+- **README:** noted that the first call right after a skill update can return empty (an OpenClaw
+  skill-reload timing artifact on the runtime side — re-run; verify with `--verify-self`).
+
 ## [1.5.0] — 2026-06-22
 
 **Cross-agent trifecta reassembly (confused deputy).** B45 (1.4.0) checks whether one agent is the

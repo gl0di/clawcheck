@@ -1749,6 +1749,31 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
             r"(.+): holds all 3 legs",
             {"he": r"\1: מחזיק בכל שלוש הרגליים"},
         ),
+
+        # ---- B47 evidence: cross-agent reassembly chain + weakest edge tier ----
+        # Prefix translates; the chain (agent names + arrows) is data, preserved verbatim.
+        (
+            r"reassembly chain: (.+)",
+            {"he": r"שרשרת הרכבה מחדש: \1"},
+        ),
+        (
+            r"reachable via walls only: (.+)",
+            {"he": r"נגיש דרך חומות בלבד: \1"},
+        ),
+        # The tier label is a fixed enum, so one full-string rule per value. The enum key
+        # (schema/filtered/raw) stays Latin like other technical tokens; the gloss is he.
+        (
+            r"weakest edge tier: schema \(wall\)",
+            {"he": r"הקשת החלשה ביותר: schema (חומה)"},
+        ),
+        (
+            r"weakest edge tier: filtered \(sieve\)",
+            {"he": r"הקשת החלשה ביותר: filtered (מסננת)"},
+        ),
+        (
+            r"weakest edge tier: raw/unknown \(passthrough\)",
+            {"he": r"הקשת החלשה ביותר: raw/unknown (מעבר ישיר)"},
+        ),
     ]
 
     # C5 write-exposure fragments: the engine reports the PRECISE bit found

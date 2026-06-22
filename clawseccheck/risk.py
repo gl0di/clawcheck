@@ -662,7 +662,9 @@ def render_risk_paths(paths: list[RiskPath], ascii_only: bool = False) -> str:
 
     for p in paths:
         sev_tag = f"[{p.severity}]"
-        lines.append(f"{sev_tag} {p.title}")
+        # Include the id (RISK-NN) in the human output too — it was only in --json before,
+        # so a finding referenced by id could not be cross-referenced in the text report.
+        lines.append(f"{sev_tag} {p.id}: {p.title}")
         lines.append(f"  Chain : {arrow.join(p.chain)}")
         lines.append(f"  Why   : {p.why}")
         lines.append(f"  Fix   : {p.fix}")
