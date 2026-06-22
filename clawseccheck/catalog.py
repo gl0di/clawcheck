@@ -161,6 +161,76 @@ CATALOG: list[CheckMeta] = [
 BY_ID = {c.id: c for c in CATALOG}
 
 
+# ── OWASP framework mapping (additive metadata; no verdict/score impact) ──────────
+# OWASP Top 10 for LLM Applications 2025 — grounded against genai.owasp.org (the 2025
+# list reordered vs 2023: Sensitive-Info-Disclosure is LLM02, Improper-Output-Handling
+# LLM05, Excessive-Agency LLM06, System-Prompt-Leakage LLM07 is new).
+OWASP_LLM_2025 = {
+    "LLM01": "Prompt Injection",
+    "LLM02": "Sensitive Information Disclosure",
+    "LLM03": "Supply Chain",
+    "LLM04": "Data and Model Poisoning",
+    "LLM05": "Improper Output Handling",
+    "LLM06": "Excessive Agency",
+    "LLM07": "System Prompt Leakage",
+    "LLM08": "Vector and Embedding Weaknesses",
+    "LLM09": "Misinformation",
+    "LLM10": "Unbounded Consumption",
+}
+
+# Each check mapped to the OWASP-LLM-2025 category/categories it addresses ON THE AGENT
+# surface. Only clear fits are tagged; checks with no clean LLM-Top-10 analog (host-watch
+# B50–B54, logging B10, monitoring B16, SSRF B38, backups C3) are intentionally left
+# unmapped rather than stretched — their coverage is the agent-specific OWASP Agentic
+# (ASI) threat classes, documented in docs/THREAT_COVERAGE.md. LLM08 (vector/embedding)
+# and LLM09 (misinformation) have no agent-config surface here, so nothing maps to them.
+OWASP_MAP = {
+    "A1": ("LLM01", "LLM06"),
+    "B1": ("LLM02",),
+    "B2": ("LLM01",),
+    "B3": ("LLM06",),
+    "B4": ("LLM06",),
+    "B5": ("LLM03",),
+    "B6": ("LLM01",),
+    "B7": ("LLM04",),
+    "B8": ("LLM06",),
+    "B9": ("LLM07", "LLM02"),
+    "B11": ("LLM02",),
+    "B13": ("LLM03",),
+    "B14": ("LLM02",),
+    "B15": ("LLM03",),
+    "B17": ("LLM06", "LLM10"),
+    "B18": ("LLM06",),
+    "B19": ("LLM02",),
+    "B20": ("LLM04",),
+    "B21": ("LLM01", "LLM05"),
+    "B22": ("LLM04", "LLM06"),
+    "B23": ("LLM01", "LLM06"),
+    "B24": ("LLM03",),
+    "B25": ("LLM03",),
+    "B26": ("LLM01",),
+    "B30": ("LLM01",),
+    "B31": ("LLM06",),
+    "B32": ("LLM06",),
+    "B33": ("LLM03",),
+    "B39": ("LLM02",),
+    "B41": ("LLM02", "LLM06"),
+    "B42": ("LLM03",),
+    "B43": ("LLM06",),
+    "B44": ("LLM06",),
+    "B45": ("LLM06",),
+    "B46": ("LLM06",),
+    "B47": ("LLM05", "LLM06"),
+    "C4": ("LLM03",),
+    "C5": ("LLM03",),
+}
+
+
+def owasp_for(check_id: str) -> tuple:
+    """OWASP-LLM-2025 code(s) a check maps to, or () if it has no clean LLM-Top-10 analog."""
+    return OWASP_MAP.get(check_id, ())
+
+
 @dataclass
 class Finding:
     id: str

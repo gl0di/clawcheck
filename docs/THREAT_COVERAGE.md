@@ -2,10 +2,10 @@
 
 Honest map of what ClawSecCheck checks today, what it does **not** yet check, and where
 the gaps are. `UNKNOWN` is never counted as `PASS`; gaps below are areas with no check at
-all (so they can't even surface as a finding). Updated 2026-06-21 for v0.30.0.
+all (so they can't even surface as a finding). Updated 2026-06-22 for v1.6.0.
 
-Current catalog: `A1, B1–B26, B30–B33, B38, B39, B41–B44, B50–B54, C3–C5`, plus the
-combinational risk engine `RISK-01..RISK-10`, the install-time vetters `--vet` (B13 on
+Current catalog: `A1, B1–B26, B30–B33, B38, B39, B41–B47, B50–B54, C3–C5`, plus the
+combinational risk engine `RISK-01..RISK-11`, the install-time vetters `--vet` (B13 on
 an uninstalled skill, now AST- and injection-aware) / `--vet-mcp`, and the **attestation
 layer** (`--ask` / `--attest`, with a guided interrogation protocol so the agent self-builds
 the report; `--attest -` reads stdin) that feeds the agent's self-report into B43/B44.
@@ -45,6 +45,63 @@ the report; `--attest -` reads stdin) that feeds the agent's self-report into B4
 | Native binary PATH safety | C5 | |
 | **Host defensive posture** | B50–B54 | Is the agent's *host* watched: network IDS, host audit, file-integrity, EDR/AV, firewall — read-only, WARN only for a high-privilege agent, never FAIL (v0.20). A self-reported `host_monitors` entry (attestation) upgrades a gap to an `ATTESTED` PASS for a monitor the scan can't see; static detection still wins (v0.28) |
 | **Combinational attack chains** | RISK-01..10 | Lethal trifecta, untrusted→exec, control-plane takeover, malicious-skill→exfil, powerful-agent-on-unmonitored-host (RISK-10), etc. |
+
+## Framework mapping (OWASP)
+
+ClawSecCheck audits the **agent**, so it maps the OWASP categories onto the agent surface
+(not app code). The machine-readable mapping is `catalog.OWASP_MAP` / `owasp_for(id)` and is
+surfaced per finding in `--json` (`"owasp": [...]`); this table is its human view. Only clear
+fits are tagged — checks with no clean LLM-Top-10 analog are covered by the agent-specific
+OWASP Agentic (ASI) classes below, not stretched into a category they don't fit.
+
+### OWASP Top 10 for LLM Applications (2025)
+
+| Code | Category | ClawSecCheck checks |
+|---|---|---|
+| LLM01 | Prompt Injection | A1, B2, B6, B21, B23, B26, B30 |
+| LLM02 | Sensitive Information Disclosure | B1, B9, B11, B14, B19, B39, B41 |
+| LLM03 | Supply Chain | B5, B13, B15, B24, B25, B33, B42, C4, C5 |
+| LLM04 | Data and Model Poisoning | B7, B20, B22 |
+| LLM05 | Improper Output Handling | B21, B47 |
+| LLM06 | Excessive Agency | A1, B3, B4, B8, B17, B18, B22, B23, B31, B32, B41, B43, B44, B45, B46, B47 |
+| LLM07 | System Prompt Leakage | B9 |
+| LLM08 | Vector and Embedding Weaknesses | — (no agent-config surface; RAG/embedding concern) |
+| LLM09 | Misinformation | — (model output / overreliance; out of scope) |
+| LLM10 | Unbounded Consumption | B17 |
+
+LLM08/LLM09 are honest non-coverage: they live in the model/RAG layer, not the agent config
+ClawSecCheck reads. **Excessive Agency (LLM06)** is where the tool is densest — the whole
+multi-agent privilege-separation arc (B45/B46/B47) lands here, exactly the agent-specific
+surface a web/code reviewer never sees.
+
+### OWASP Agentic (ASI) threat classes — by name
+
+The agent-specific framework is the **OWASP Agentic Security Initiative (ASI)** taxonomy.
+Mapped by threat *name* (the exact ASI numbering should be reconciled against the published
+ASI Top 10 / Agentic Threats & Mitigations doc before being treated as canonical — not
+stamped here):
+
+| ASI threat class | ClawSecCheck checks |
+|---|---|
+| Goal hijacking / prompt injection | A1, B6, B21, B23, B26, B28 |
+| Tool misuse (unsafe delegation / parameter injection) | B3, B18, B31, B45, B46, B47 |
+| Identity & privilege abuse (multi-agent delegation chains) | B30, B45, B46, B47 |
+| Runtime supply chain (dynamic tool/plugin composition) | B5, B13, B25, B33, B42 |
+| Unexpected RCE (sandboxing failures) | B4, C5 |
+| Memory & context poisoning | B7, B20, B28 |
+| Insecure inter-agent communication | B47, B2, B32 |
+| Cascading failures / blast-radius amplification | B41, B43, B45, B46, B47 |
+| Human-agent trust / decision-fatigue | B8, B18, B23 |
+| Rogue agent misalignment | B17, B22 (partial) |
+
+This is the honest positioning: ClawSecCheck covers the **agent-specific** OWASP classes —
+tool misuse, multi-agent identity/privilege abuse, inter-agent communication, cascading
+blast-radius — that an app-code / OWASP-web reviewer does not touch at all.
+
+**Sources (grounded):** OWASP Top 10 for LLM Applications 2025
+(<https://genai.owasp.org/llm-top-10/>); OWASP Agentic Security Initiative
+(<https://genai.owasp.org/initiatives/agentic-security-initiative/>) and Agentic AI — Threats
+and Mitigations (<https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/>).
 
 ## Gaps (no check today)
 

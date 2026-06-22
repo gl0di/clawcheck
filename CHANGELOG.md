@@ -3,6 +3,31 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.6.0] — 2026-06-22
+
+**OWASP framework mapping.** Each check is now mapped to the **OWASP Top 10 for LLM Applications
+(2025)** category it addresses on the agent surface, and the checks are mapped (by threat name) to the
+agent-specific **OWASP Agentic Security Initiative (ASI)** classes. Pure additive metadata — no
+verdict, score, or check behaviour changed. Grounded against `genai.owasp.org` (the 2025 list reordered
+vs 2023, so the codes were verified, not assumed).
+
+### Added
+- **`catalog.OWASP_MAP` + `owasp_for(id)`** — single source of truth mapping each check to its
+  OWASP-LLM-2025 code(s); `catalog.OWASP_LLM_2025` holds the ten canonical codes/titles.
+- **`--json` exposes `"owasp": [...]`** per finding (empty list for checks with no clean LLM-Top-10
+  analog — host-watch, logging, SSRF, backups — which are covered by the ASI classes instead).
+- **`docs/THREAT_COVERAGE.md`** gains a *Framework mapping* section: the LLM-Top-10 table (the whole
+  multi-agent arc B45/B46/B47 lands under **LLM06 Excessive Agency**) and the ASI threat-class table
+  (tool misuse, multi-agent identity/privilege abuse, inter-agent communication, cascading
+  blast-radius), with grounded source links.
+
+### Notes
+- Honest non-coverage is stated, not stretched: **LLM08** (vector/embedding) and **LLM09**
+  (misinformation) live in the model/RAG layer with no agent-config surface, so nothing maps to them.
+- Borrowed the *taxonomy credibility* of an OWASP-web reviewer skill without its method — ClawSecCheck
+  stays deterministic, local, zero-token; it maps OWASP onto the **agent**, the surface app-code
+  reviewers don't audit.
+
 ## [1.5.1] — 2026-06-22
 
 **Hebrew completeness for B47 evidence.** A third field round confirmed the recurring pattern: a new

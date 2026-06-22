@@ -12,7 +12,7 @@ import html
 import json
 import re
 
-from .catalog import CRITICAL, FAIL, HIGH, LOW, MEDIUM, PASS, UNKNOWN, WARN, Finding
+from .catalog import CRITICAL, FAIL, HIGH, LOW, MEDIUM, PASS, UNKNOWN, WARN, Finding, owasp_for
 from .guide import suggest_actions
 from .i18n import is_rtl, t, title_for, tp
 from .scoring import ScoreResult
@@ -338,6 +338,7 @@ def _finding_to_dict(f: Finding) -> dict:
             "status": f.status, "detail": _sanitize(f.detail),
             "fix": _sanitize(f.fix), "framework": f.framework,
             "confidence": getattr(f, "confidence", "HIGH"),
+            "owasp": list(owasp_for(f.id)),
             "evidence": [_sanitize(e) for e in (f.evidence or [])]}
 
 

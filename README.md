@@ -165,6 +165,12 @@ The built-in `openclaw security audit` and tools like Trent/ClawSec are good —
   `/tmp` are exempt (the sticky bit blocks cross-owner replacement).
 - Plus your platform's own **`openclaw security audit`**, run for you and merged in.
 
+**Mapped to OWASP.** Each check is tagged with its **OWASP Top 10 for LLM Applications (2025)**
+category (surfaced per finding in `--json` as `"owasp": [...]`), and the checks are mapped to the
+agent-specific **OWASP Agentic (ASI)** threat classes — tool misuse, multi-agent identity/privilege
+abuse, insecure inter-agent communication, cascading blast-radius — that an app-code reviewer never
+sees. Full matrix in [`docs/THREAT_COVERAGE.md`](docs/THREAT_COVERAGE.md).
+
 ## Built-in audit, included for you
 
 Non-technical users will never open a terminal to run OpenClaw's own
