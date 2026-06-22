@@ -1784,6 +1784,116 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
             {"he": r"\1 רשומות plugin/skill מעוגנות לגרסה/תג ספציפי או hash שלמות; לא זוהה עדכון אוטומטי."},
         ),
 
+        # ---- B9: redactSensitive unexpected value ----
+        (
+            r'logging\.redactSensitive has unexpected value (.+) — expected "tools" or "off"\.',
+            {"he": r'ל-logging.redactSensitive ערך לא צפוי \1 — מצופה "tools" או "off".'},
+        ),
+
+        # ---- B26: untrusted-context exposure (whole detail) ----
+        (
+            r"Untrusted senders' quoted/history context is injected into the model "
+            r"\(channels\.<p>\.contextVisibility='all'/default\) — a prompt-injection surface\. "
+            r"Affected channel\(s\): (.+)\.",
+            {"he": r"הקשר מצוטט/היסטוריה משולחים לא-מהימנים מוזרק למודל "
+                   r"(channels.<p>.contextVisibility='all'/ברירת מחדל) — משטח הזרקת הנחיות. "
+                   r"ערוצים מושפעים: \1."},
+        ),
+
+        # ---- B30: mutable-display-name allowlist + group-history fragments ----
+        (
+            r'channels\.(.+?)\.dangerouslyAllowNameMatching=true — '
+            r'allowlist matched against mutable display name \(bypass risk\)',
+            {"he": r'channels.\1.dangerouslyAllowNameMatching=true — '
+                   r'רשימת ההיתר מותאמת מול שם תצוגה משתנה (סיכון עקיפה)'},
+        ),
+        (
+            r'channels\.(.+?)\.includeGroupHistoryContext="recent" — '
+            r'untrusted group history injected into model context',
+            {"he": r'channels.\1.includeGroupHistoryContext="recent" — '
+                   r'היסטוריית קבוצה לא-מהימנה מוזרקת להקשר המודל'},
+        ),
+
+        # ---- B32: network-exposed gateway + control-plane reachable ----
+        (
+            r"Gateway is network-exposed \(bind=(.+?), auth\.mode=(.+?)\) and "
+            r"control-plane tools are not explicitly in gateway\.tools\.deny — "
+            r"an authenticated caller could reach mutation endpoints",
+            {"he": r"ה-Gateway חשוף לרשת (bind=\1, auth.mode=\2) וכלי control-plane "
+                   r"אינם נמצאים במפורש ב-gateway.tools.deny — קורא מאומת יכול להגיע "
+                   r"לנקודות קצה של מוטציה"},
+        ),
+        # B32 FAIL: control-plane tool re-enabled in gateway.tools.allow
+        (
+            r"gateway\.tools\.allow re-enables control-plane tool\(s\) over the HTTP "
+            r"gateway — config mutation / cron / cross-session send is reachable via "
+            r"HTTP: (.+)",
+            {"he": r"gateway.tools.allow מפעיל מחדש כלי control-plane דרך ה-HTTP "
+                   r"gateway — שינוי תצורה / cron / שליחה בין-סשנים נגישים דרך "
+                   r"HTTP: \1"},
+        ),
+
+        # ---- B38: browser SSRF / no-sandbox fragments + WARN whole detail ----
+        (
+            r'browser\.ssrfPolicy\.dangerouslyAllowPrivateNetwork=true — '
+            r'agent browser can reach internal/metadata IPs '
+            r'\(169\.254\.169\.254 cloud-credential theft\)',
+            {"he": r'browser.ssrfPolicy.dangerouslyAllowPrivateNetwork=true — '
+                   r'דפדפן הסוכן יכול להגיע לכתובות IP פנימיות/metadata '
+                   r'(גניבת אישורי ענן דרך 169.254.169.254)'},
+        ),
+        (
+            r'browser\.noSandbox=true — headless browser runs without OS sandbox '
+            r'\(process-escape risk\)',
+            {"he": r'browser.noSandbox=true — דפדפן headless פועל ללא ארגז חול של '
+                   r'מערכת ההפעלה (סיכון בריחת תהליך)'},
+        ),
+        (
+            r'Browser is configured with no ssrfPolicy\.hostnameAllowlist — the agent '
+            r'browser can fetch any external URL \(open egress / SSRF surface\)\.',
+            {"he": r'הדפדפן מוגדר ללא ssrfPolicy.hostnameAllowlist — דפדפן הסוכן יכול '
+                   r'לאחזר כל כתובת URL חיצונית (משטח יציאה פתוח / SSRF).'},
+        ),
+
+        # ---- B39: session visibility / cross-user transcript leak ----
+        (
+            r'session\.dmScope="main" — all DM peers share ONE session '
+            r'\(cross-user contamination / transcript leak\)',
+            {"he": r'session.dmScope="main" — כל עמיתי ה-DM חולקים סשן אחד '
+                   r'(זיהום בין-משתמשים / דליפת תמליל)'},
+        ),
+        (
+            r'non-owner channels: (.+)',
+            {"he": r'ערוצים שאינם של הבעלים: \1'},
+        ),
+        (
+            r'tools\.sessions\.visibility="(agent|all)" — a session \(or tool\) can '
+            r'read transcripts from other sessions \(cross-user data leak risk\)',
+            {"he": r'tools.sessions.visibility="\1" — סשן (או כלי) יכול לקרוא תמלילים '
+                   r'מסשנים אחרים (סיכון דליפת נתונים בין-משתמשים)'},
+        ),
+
+        # ---- B41: credential blast-radius (with / without gateway token) ----
+        (
+            r"(\d+) provider credential\(s\) \(providers: (.*?)\) \+ gateway token are "
+            r"reachable by an agent with untrusted ingress and outbound tools — one "
+            r"compromise's blast radius spans all of them\. Use least-privilege scopes, "
+            r"isolate high-value profiles, and keep them rotatable\.",
+            {"he": r"\1 אישורי ספק (ספקים: \2) + אסימון gateway נגישים לסוכן עם כניסה "
+                   r"לא-מהימנה וכלי יציאה — רדיוס הפגיעה של פריצה אחת משתרע על כולם. "
+                   r"השתמש בהרשאות מינימליות, בודד פרופילים בעלי ערך גבוה, ושמור אותם "
+                   r"ניתנים לסבב."},
+        ),
+        (
+            r"(\d+) provider credential\(s\) \(providers: (.*?)\) are "
+            r"reachable by an agent with untrusted ingress and outbound tools — one "
+            r"compromise's blast radius spans all of them\. Use least-privilege scopes, "
+            r"isolate high-value profiles, and keep them rotatable\.",
+            {"he": r"\1 אישורי ספק (ספקים: \2) נגישים לסוכן עם כניסה לא-מהימנה וכלי "
+                   r"יציאה — רדיוס הפגיעה של פריצה אחת משתרע על כולם. השתמש בהרשאות "
+                   r"מינימליות, בודד פרופילים בעלי ערך גבוה, ושמור אותם ניתנים לסבב."},
+        ),
+
         # ---- C3: PASS detail (backups found) ----
         (
             r"Backups present \(([^)]+)\)\.",
