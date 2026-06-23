@@ -3,6 +3,35 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.8.3] — 2026-06-23
+
+**Manifest honesty + clean publish surface.** Resolves the contradictions a supply-chain
+scanner (and a careful reviewer) can read in the shipped manifest, and stops the auditor's
+own test corpus from being mistaken for its live configuration. No engine or check changes —
+the audit behaves exactly as before; this is documentation and packaging only.
+
+### Fixed
+- **Network/read-only contract no longer self-contradicts.** The "Keeping ClawSecCheck current"
+  section previously promised zero-network/never-updates and then instructed the agent to run a
+  post-audit network update check (`clawhub update --all`) and to refresh a local hint file. It is
+  now strictly advisory and user-initiated: ClawSecCheck never touches the network and never
+  writes the hint file as a side effect; updating is an explicit action the user takes themselves.
+- **"Read-only" wording reconciled with history writes.** The manifest claimed it "never writes
+  anything by default," which conflicted with the per-run local history/journal. Reframed:
+  *read-only* means it never mutates your OpenClaw setup; its only writes are a private,
+  never-uploaded local store under `~/.clawseccheck/` (opt out with `--no-history`).
+
+### Changed
+- **Publish a clean surface.** `clawhub-publish.yml` now stages the runtime + docs and excludes
+  `tests/` and `fixtures/` from the published artifact, so the intentionally-vulnerable example
+  configs the engine *detects* (docker.sock, `allowFrom "*"`, `dangerouslyAllowPrivateNetwork`)
+  are no longer mis-attributed to the skill itself. The full suite still runs on the complete
+  checkout in the smoke gate.
+
+### Added
+- One-line read-only/local transparency note at the top of `SKILL.md`.
+- `fixtures/README.md` documenting that the bad_* configs are inert test data, not live settings.
+
 ## [1.8.2] — 2026-06-23
 
 **Self-hardening + bilingual directory metadata.** A property-based test for the secret

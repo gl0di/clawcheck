@@ -75,9 +75,24 @@ jobs:
         env:
           CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
 
+      - name: Stage publishable files (exclude tests/ + fixtures/)
+        # ClawSecCheck is a security auditor: tests/ and fixtures/ contain intentionally
+        # vulnerable example configs (docker.sock, allowFrom "*", dangerouslyAllowPrivateNetwork)
+        # that the engine DETECTS in others. They are test data, never the skill's own config —
+        # but a scanner pointed at the published tree mis-reads them as live settings. The smoke
+        # gate above already ran the full suite on the complete checkout; we publish only the
+        # runtime + docs so the audited artifact contains no decoy configs.
+        run: |
+          rm -rf dist-skill && mkdir -p dist-skill
+          cp -r clawseccheck SKILL.md SKILL_HE.md README.md LICENSE \
+                SECURITY.md SECURITY_MODEL.md CHANGELOG.md pyproject.toml docs audit.py \
+                dist-skill/
+          find dist-skill -name '__pycache__' -type d -prune -exec rm -rf {} + || true
+          echo "Staged for publish:" && ls -1 dist-skill
+
       - name: Publish skill
         run: >
-          clawhub publish .
+          clawhub publish ./dist-skill
           --slug clawseccheck
           --owner gl0di
           --version "${{ steps.ver.outputs.version }}"

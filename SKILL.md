@@ -1,6 +1,6 @@
 ---
 name: clawseccheck
-version: 1.8.2
+version: 1.8.3
 description: Free, local, read-only security self-audit for your own OpenClaw agent. Scores your setup (A–F), finds the most urgent holes, and gives copy-paste fixes. No API key, no data leaves your machine.
 license: MIT
 metadata: {"openclaw":{"emoji":"🔍","os":["darwin","linux","win32"],"user-invocable":true},"display_name":{"en":"ClawSecCheck — OpenClaw Security Self-Audit","he":"ClawSecCheck — ביקורת אבטחה ל-OpenClaw"},"display_description":{"en":"Free, local, read-only security self-audit for your own OpenClaw agent. Scores your setup (A–F), finds the most urgent holes, and gives copy-paste fixes. No API key, no data leaves your machine.","he":"כלי חינמי, מקומי וקריאה-בלבד לביקורת אבטחה עצמית של סוכן ה-OpenClaw שלך. נותן ציון A–F, מאתר את הפרצות הדחופות ביותר ומספק תיקונים מוכנים להדבקה. ללא מפתח API — שום מידע לא יוצא מהמחשב שלך."},"tags":{"en":["security","openclaw","ai-agent","audit","prompt-injection","llm-security","read-only","self-audit","sarif"],"he":["אבטחה","ביקורת","סוכני-AI","אבטחת-LLM","זריקת-פרומפט","קריאה-בלבד","OpenClaw"]}}
@@ -14,14 +14,20 @@ Activate when the user says anything like:
 "check my security", "is my agent safe", "audit me", "security check", "what's my score",
 "am I vulnerable", "scan my agent", "how secure is my setup", "test my agent for attacks".
 
+It is **read-only and local** — it inspects, it never changes your setup or reaches the network — so
+it is safe to run on request. Before the first run, tell the user in one line what it will read (their
+OpenClaw config, bootstrap files, and the text of installed skills) so there are no surprises.
+
 ## What ClawSecCheck does (be transparent)
 
 It runs a **read-only** local script that inspects the user's own agent: `~/.openclaw/openclaw.json`,
 the workspace bootstrap files (`SOUL.md`, `AGENTS.md`, `TOOLS.md`, `MEMORY.md`, etc.), the text of
 **installed skills/plugins**, and the permissions of memory/log paths. It makes **no network calls**
-and **never writes anything by default** — the only writes are ones the user asks for by passing a
-flag (`--save`, `--badge`, `--html`, `--sarif`, `--monitor`, `--trend`, `--log`). Pure Python
-standard library, no dependencies.
+and **never modifies your OpenClaw setup** — *read-only* means it never touches `openclaw.json`, your
+skills, or your bootstrap files. The only things it writes stay **on your own machine and are never
+uploaded**: a private local audit history under `~/.clawseccheck/` (owner-only — opt out with
+`--no-history`) and any report files you explicitly request via a flag (`--save`, `--badge`, `--html`,
+`--sarif`, `--monitor`, `--trend`, `--log`). Pure Python standard library, no dependencies.
 
 It also runs OpenClaw's **built-in** audit — the one fixed, read-only external command
 `openclaw security audit --json` (never `--fix`) — and folds those findings into the same report.
@@ -343,27 +349,27 @@ ClawSecCheck is a **checker and guide**. It does NOT apply changes.
 
 ---
 
-## Keeping ClawSecCheck current (agent guidance)
+## Keeping ClawSecCheck current (advisory only)
 
-A **stale security scanner is itself a risk** — an old build is missing the latest checks and
-fixes, exactly the "outdated install is the attack target" hygiene ClawSecCheck flags in others
-(B25 / C4). ClawSecCheck **never checks for its own updates over the network** — that would break
-its zero-network promise and it would have to flag itself. So that responsibility falls to **you,
-the agent**, which *does* have network access:
+A **stale security scanner is itself a risk** — an old build misses the latest checks, the same
+"outdated install is the attack target" hygiene ClawSecCheck flags in others (B25 / C4). The tool
+stays honest about this **without breaking its own promises**, by drawing a hard line:
 
-- After running an audit, it is good security practice to check whether a **newer ClawSecCheck**
-  is published — e.g. `openclaw skills update clawseccheck` or `clawhub update --all` (the same
-  tooling the user installed it with). Review/pin a tag rather than blind-updating anything
-  security-sensitive.
-- If a newer version exists, **tell the user** and offer to update it (updating is the user's
-  call — never auto-update without a clear "yes").
-- The audit's own report may print an **offline staleness line** (it reads only the local clock
-  and an optional local hint file `~/.clawseccheck/latest.json` — never the network). If your
-  update check learns the latest version, you may refresh that hint file so the offline notice
-  stays accurate. After any update, you can confirm integrity with `--verify-self` (SHA-256 of the
-  engine) against the trusted release digest.
-- This check is **read-only and advisory**: surface it, let the user decide. Suppress the in-tool
-  reminder with `--no-update-notice` (or `CLAWSECCHECK_NO_UPDATE_NOTICE=1`) if the user finds it noisy.
+- ClawSecCheck itself **never touches the network** — not to check for updates, not for anything.
+  Its only staleness signal is an **offline** line in the report that reads the local clock and an
+  optional local hint file (`~/.clawseccheck/latest.json`); it never fetches that file and never
+  writes it as a side effect of an audit. Suppress the reminder with `--no-update-notice` (or
+  `CLAWSECCHECK_NO_UPDATE_NOTICE=1`).
+- **Updating is the user's own action, never an automatic step.** Do not check for or install
+  updates as a side effect of running an audit. If — and only if — the user explicitly asks to
+  update, they run the same tool they installed it with themselves (e.g.
+  `openclaw skills update clawseccheck` or `clawhub update --all`), reviewing or pinning a tag
+  rather than blind-updating anything security-sensitive.
+- After any update the user can confirm integrity with `--verify-self` (SHA-256 of the engine)
+  against the trusted release digest.
+
+The contract stays simple: the audit is **local-only and read-only**; anything that reaches the
+network is an **explicit, user-initiated** action — never something the skill does on its own.
 
 ---
 
