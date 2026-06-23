@@ -3,6 +3,19 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.10.1] — 2026-06-23
+
+**ClawHub display title fix.** The published skill now shows its proper brand title
+"ClawSecCheck — OpenClaw Security Self-Audit" instead of the title-cased slug "Clawseccheck".
+
+### Fixed
+- **ClawHub title set explicitly (B-015 follow-up).** ClawHub derives a skill's display title from
+  `clawhub publish --name` (grounded against `publish --help`), not from `SKILL.md`
+  `metadata.display_name`, so the v1.10.0 directory-basename fix only produced "Clawseccheck". The
+  publish workflow now passes `--name "ClawSecCheck — OpenClaw Security Self-Audit"`, and a test
+  asserts that flag equals `SKILL.md` `metadata.display_name.en` so the title can never drift.
+  CI-only — no runtime change.
+
 ## [1.10.0] — 2026-06-23
 
 **New filesystem-write exposure check + honest output on non-OpenClaw setups.** Adds the B55
