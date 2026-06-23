@@ -65,7 +65,12 @@ def _replace_secret_pattern(m: __import__("re").Match) -> str:  # type: ignore[t
             prefix = full[: idx + 1]
             # trim any quotes/spaces after the separator
             rest = full[idx + 1 :].lstrip(" '\"")
-            if rest and rest != "<redacted>":
+            if rest == "<redacted>":
+                # Value already masked on an earlier pass — leave the whole
+                # match (key prefix included) untouched so redact() stays
+                # idempotent instead of collapsing to a bare "<redacted>".
+                return full
+            if rest:
                 return prefix + " <redacted>"
     # Bare token (sk-ant-..., AKIA..., AIza...) — replace entirely.
     if full == "<redacted>":
