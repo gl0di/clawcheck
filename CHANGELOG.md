@@ -3,6 +3,24 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.11.1] — 2026-06-24
+
+**Fix double-reported docker break-glass flags.** v1.11.0 detected the dangerous docker
+`dangerouslyAllow*` trio in both the sandbox check (B4) and the dangerous-overrides check
+(B48), so a config that set them showed the same finding twice. B48 has owned the whole
+`dangerously*` registry since v1.8.0; the B4 copy was redundant and is reverted.
+
+### Fixed
+- **Trio reported once, by B48 only.** Reverted the `agents.defaults.sandbox.docker.dangerouslyAllow*`
+  detection added to `check_sandbox` (B4) in v1.11.0 — `check_dangerous_overrides` (B48)
+  already flags those flags (gateway-wide and per-agent), so the audit was emitting a
+  duplicate FAIL. A regression test now asserts the trio appears in exactly one check's
+  evidence.
+- **Hebrew B4 remediation no longer leaks English** (carried over from v1.11.0). The sandbox
+  FAIL remediation's `he` translation was a stale shorter form that never matched the shipped
+  string; the full remediation, plus the docker.sock and `workspaceAccess=rw` evidence
+  fragments, are now translated.
+
 ## [1.11.0] — 2026-06-24
 
 **Detect dangerous docker sandbox break-glass flags (NC-7).** The sandbox check now flags
