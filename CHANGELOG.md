@@ -3,6 +3,26 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.13.0] — 2026-06-24
+
+**Two new combinational attack-chains in the risk engine.** Each combines legs that
+individual checks already flag in isolation but no existing RISK rule tied together.
+
+### Added
+- **RISK-14 — self-escalating autonomy loop (HIGH).** Fires when a `tools.elevated.allowFrom`
+  provider is a wildcard (`"*"` = any sender) AND a heartbeat is configured
+  (`agents.defaults.heartbeat` or a per-agent heartbeat). B3 flags the wildcard and B17 the
+  heartbeat alone; together, one injected instruction drives elevated tools unattended across
+  heartbeat cycles, with no human in the loop.
+- **RISK-16 — sandbox host-reach → credential-read → control-plane takeover (HIGH).** Fires
+  when `agents.defaults.sandbox.workspaceAccess == "rw"` AND a docker bind reaches the host
+  filesystem broadly (docker.sock or a root-level source) AND `gateway.auth.password` is
+  stored in plaintext. The agent reads the credential off the host and authenticates to the
+  control plane as admin.
+
+Both fire only when every leg is explicitly present, so they add no false positives over the
+underlying findings — verified neither fires on the live config or the bundled fixtures.
+
 ## [1.12.0] — 2026-06-24
 
 **Two new Control-UI / plugin hardening checks (NC-4, NC-8).** A reconciliation of the
