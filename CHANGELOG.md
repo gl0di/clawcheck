@@ -3,6 +3,25 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.12.0] — 2026-06-24
+
+**Two new Control-UI / plugin hardening checks (NC-4, NC-8).** A reconciliation of the
+existing dangerous-flag check (B48) against the backlog found these two were the only
+genuinely-uncovered gaps; both are now detected.
+
+### Added
+- **B56 — Control-UI cross-origin allow-all.** `gateway.controlUi.allowedOrigins` containing
+  `"*"` now FAILs: an allow-all browser-origin policy lets any website drive the Control UI
+  (CSRF / origin bypass). UNKNOWN when unset (the default is restrictive); PASS for an
+  explicit origin allowlist. Grounded against docs.openclaw.ai/gateway/security.
+- **B57 — plugin auto-approve.** `plugins.entries.<name>.config.permissionMode == "approve-all"`
+  now FAILs: plugins run in-process as trusted code, so auto-approving every permission prompt
+  removes the last gate. UNKNOWN when no plugins are installed; PASS otherwise.
+
+Both are scored HIGH hardening checks that FAIL only on the explicit dangerous value, so a
+default or real-world config stays UNKNOWN/PASS — verified zero false-positive FAILs.
+Bilingual (en/he) evidence and remediation, with clean+bad fixtures and OWASP-LLM mappings.
+
 ## [1.11.1] — 2026-06-24
 
 **Fix double-reported docker break-glass flags.** v1.11.0 detected the dangerous docker
