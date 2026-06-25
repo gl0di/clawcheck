@@ -87,3 +87,20 @@ introduced:
   (unreadable file, unparseable config, unsupported OpenClaw version), it reports
   `UNKNOWN`. An `UNKNOWN` result is excluded from the score and never treated as a
   safe outcome.
+
+## Release validation protocol
+
+A release must pass local validation before merge/tag:
+- `python3 -m ruff check .`
+- `python3 -m pytest`
+- targeted checks for the changed modules.
+
+Also verify that release documentation is synchronized:
+- `README.md`
+- `CHANGELOG.md`
+- `SECURITY.md`
+- `SECURITY_MODEL.md`
+- `SKILL.md`
+- `SKILL_HE.md`
+
+Keep this list current whenever release rules change so the model of operational security stays consistent with the shipped version.

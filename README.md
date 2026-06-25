@@ -661,3 +661,25 @@ python3 -m pytest -q
 ## 📄 License
 
 MIT — see [LICENSE](LICENSE).
+
+## Release protocol (maintainers)
+
+Before merging a release, follow this checklist:
+
+### 1) Tests before release
+- `python3 -m ruff check .`
+- `python3 -m pytest`
+- Run the most relevant test subset for the touched area if the full suite is too large for your CI window.
+
+### 2) Documentation and protocol alignment
+Update all of the following files (in order):
+- `CHANGELOG.md`
+- `README.md`
+- `SECURITY.md`
+- `SECURITY_MODEL.md`
+- `SKILL.md`
+- `SKILL_HE.md`
+
+### 3) Pre-release review gate
+- Re-read the release notes and verify that check IDs, remediation text, and examples match the implemented code/tests.
+- Confirm that `SKILL.md` and `SKILL_HE.md` contain the same release/protocol expectations.

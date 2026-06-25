@@ -52,3 +52,20 @@ Out of scope:
 
 We aim to acknowledge reports within 5 business days and to release a patch within 30
 days for confirmed issues. Complex issues may take longer; we will communicate delays.
+
+## Pre-release hygiene and release checklist
+
+Before publishing a new release, run local checks first:
+- `python3 -m ruff check .`
+- `python3 -m pytest`
+- targeted tests for files changed in the release scope.
+
+Then update and verify release-facing documentation files:
+- `CHANGELOG.md`
+- `README.md`
+- `SECURITY.md`
+- `SECURITY_MODEL.md`
+- `SKILL.md`
+- `SKILL_HE.md`
+
+This prevents release drift (code/review/protocol mismatch) and keeps the operational security guidance aligned with shipped behavior.

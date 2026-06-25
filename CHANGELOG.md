@@ -1836,3 +1836,11 @@ All history, SARIF files, and logs are written only on your machine, only when y
 - Lethal Trifecta correlation (A1) and hardening checks (B1–B12).
 - Deterministic A–F score with honesty hard-caps and a shareable badge (grade only).
 - Bootstrap-file injection scanning (B6) — a gap the native audit does not cover.
+
+## [Unreleased]
+
+### Added
+- Documented a formal pre-release protocol for `ruff`/test validation and mandatory documentation synchronization before every release.
+
+### Changed
+- Added explicit checklist references for keeping release artifacts aligned across `README.md`, `CHANGELOG.md`, `SECURITY.md`, `SECURITY_MODEL.md`, `SKILL.md`, and `SKILL_HE.md`.
