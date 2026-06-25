@@ -736,6 +736,14 @@ PHRASES: dict[str, dict[str, str]] = {
         "he": "וודא שהמיומנויות המותקנות ניגשות רק לקבצים שלהן ולמשאבים המוצהרים.",
     },
 
+    # ---- F-022: typosquatting — skill/dep name resembles well-known name ----
+    "Verify the skill and its dependency names are not impersonating "
+    "well-known packages (supply-chain AST02/AST04). Uninstall if "
+    "provenance cannot be confirmed.": {
+        "he": "ודא שהכישורים ושמות התלויות אינם מתחזים לחבילות מוכרות "
+              "(שרשרת אספקה AST02/AST04). הסר אם לא ניתן לאמת את המקור.",
+    },
+
     # ---- C6 (C-052): hook-composition tool-policy drop (UNKNOWN advisory) ----
     "This OpenClaw version predates v2026.6.10, which fixed a hook-registry "
     "composition bug that could silently drop trusted tool policies at runtime. "
@@ -2084,6 +2092,18 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
         (
             r"(.+): runtime-external-fetch instruction \(OWASP AST05\): (.+)",
             {"he": r"\1: הוראת טעינת הנחיות מרחוק בזמן ריצה (OWASP AST05): \2"},
+        ),
+
+        # ---- F-022: typosquatting — skill/dep name resembles well-known name ----
+        # F-022: B13 HIGH WARN detail (whole-string form)
+        (
+            r"Possible typosquat name\(s\) in installed skill\(s\): (.+)",
+            {"he": r"שמות חשודים כחיקוי (typosquat) בכישור/ים מותקנים: \1"},
+        ),
+        # F-022: per-skill evidence fragment: "<skill>: '<cand>' name resembles '<known>' (possible typosquat, edit distance <d>)"
+        (
+            r"(.+): '([^']+)' name resembles '([^']+)' \(possible typosquat, edit distance (\d+)\)",
+            {"he": r"\1: השם '\2' דומה ל-'\3' (חשד לחיקוי, מרחק עריכה \4)"},
         ),
 
         # ---- B14: egress surface fragments (whole-string forms) ----

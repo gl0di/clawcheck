@@ -778,6 +778,186 @@ def _custom(cid, severity, status, detail, fix, ev=None) -> Finding:
                    confidence=m.confidence)
 
 
+# ---------- F-022: typosquatting detection for skill / dependency names ----------
+# Detects supply-chain impersonation via ASCII edit-distance (OWASP AST02/AST04).
+# Distinct from C-038 which catches Unicode homoglyphs in MCP server names.
+# Severity: WARN (heuristic — near-miss name is suspicious, not proof).
+
+def _levenshtein(a: str, b: str) -> int:
+    """Wagner-Fischer edit distance between strings a and b. Pure stdlib, O(len(a)*len(b))."""
+    m, n = len(a), len(b)
+    if m < n:
+        a, b, m, n = b, a, n, m
+    # prev[j] = distance(a[:i], b[:j])
+    prev = list(range(n + 1))
+    for i in range(1, m + 1):
+        curr = [i] + [0] * n
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            curr[j] = min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost)
+        prev = curr
+    return prev[n]
+
+
+# Well-known service / package names to compare against.
+# Rules: all lowercase, len >= 5 (short tokens produce too much noise).
+# Excludes: "fetch", "boto" (short/ambiguous).
+_KNOWN_NAMES: frozenset[str] = frozenset({
+    # Cloud / hosting services
+    "google", "github", "gitlab", "stripe", "twilio", "heroku", "vercel",
+    "shopify", "zendesk", "dropbox", "discord", "notion", "cloudflare",
+    "openai", "anthropic", "claude", "huggingface", "amazon", "azure",
+    # Python ecosystem
+    "requests", "numpy", "pandas", "flask", "django", "fastapi", "pydantic",
+    "pytest", "pillow", "scipy", "celery", "sqlalchemy", "alembic", "werkzeug",
+    "tornado", "aiohttp", "httpx", "uvicorn", "dotenv", "langchain", "openssl",
+    "paramiko", "cryptography", "twisted",
+    # Node / JS ecosystem
+    "express", "lodash", "webpack", "jquery", "angular", "svelte", "nextjs",
+    "axios", "react",
+    # Databases / infra
+    "postgres", "mongodb", "redis", "elasticsearch",
+    # Misc well-known
+    "slack", "stripe", "boto3",
+})
+
+_TYPOSQUAT_MIN_KNOWN_LEN = 5  # ignore known names shorter than this
+
+# Common innocent suffixes/prefixes stripped before comparison.
+# Only stripped once, from the right (suffix) or left (prefix).
+_SQUAT_STRIP_SUFFIXES = ("-sdk", "-mcp", "-cli", "-skill", "-helper",
+                         "-plugin", "-app", "_sdk", "_mcp", "_cli",
+                         "_skill", "_helper", "_plugin", "_app")
+_SQUAT_STRIP_PREFIXES = ("py-", "js-")
+
+# Regex to extract `name:` from the SKILL.md frontmatter section of a blob.
+_SKILL_FRONTMATTER_NAME_RE = re.compile(
+    r"^# file:\s+SKILL\.md\s*\n---\s*\n(?:.*?\n)*?name:\s*([^\n#]+)",
+    re.MULTILINE,
+)
+
+# Regex to extract dep names from the manifest headers injected by _read_skill_text.
+# Reuses _MANIFEST_HEADER_RE / _REQ_UNPINNED_RE / _PKG_JSON_DEP_RE infrastructure.
+# We want ALL dep names regardless of pinning status.
+_DEP_PKG_NAME_RE = re.compile(
+    r"^[ \t]*(?!#)(?!-[rcei])(?!\s*$)([A-Za-z0-9_.\-]+)",
+    re.MULTILINE,
+)
+
+
+def _normalize_for_squat(name: str) -> str:
+    """Lowercase, strip one known suffix or prefix, return result."""
+    n = name.lower().strip()
+    for suf in _SQUAT_STRIP_SUFFIXES:
+        if n.endswith(suf) and len(n) > len(suf):
+            n = n[: -len(suf)]
+            break
+    for pre in _SQUAT_STRIP_PREFIXES:
+        if n.startswith(pre) and len(n) > len(pre):
+            n = n[len(pre):]
+            break
+    return n
+
+
+def _candidate_tokens(name: str) -> list[str]:
+    """Split a skill/dep name on hyphens and underscores, return unique lowercase tokens."""
+    import re as _re
+    parts = _re.split(r"[-_]", name.lower())
+    seen: list[str] = []
+    for p in parts:
+        if p and p not in seen:
+            seen.append(p)
+    return seen
+
+
+def _squat_hits(candidates: list[str]) -> list[tuple[str, str, int]]:
+    """For each candidate name, return (candidate, known, distance) if it closely
+    resembles a known name without being an exact match.
+
+    Rules:
+    - Compare the normalized form of *candidate* (via _normalize_for_squat) and
+      each hyphen/underscore token individually against every known name K where
+      len(K) >= _TYPOSQUAT_MIN_KNOWN_LEN.
+    - Fire when: 0 < distance <= 2 AND candidate_form != K AND
+      candidate_form not itself a known name.
+    - Returns deduplicated hits, one per unique (candidate, known) pair.
+    """
+    seen: set[tuple[str, str]] = set()
+    hits: list[tuple[str, str, int]] = []
+
+    for cand in candidates:
+        norm = _normalize_for_squat(cand)
+        # Forms to check: normalized full name + each token
+        forms_to_check = [norm] + _candidate_tokens(norm)
+        for form in forms_to_check:
+            if not form:
+                continue
+            # If this form is itself a known name → legitimate use, skip.
+            if form in _KNOWN_NAMES:
+                continue
+            for known in _KNOWN_NAMES:
+                if len(known) < _TYPOSQUAT_MIN_KNOWN_LEN:
+                    continue
+                d = _levenshtein(form, known)
+                if 0 < d <= 2:
+                    key = (cand, known)
+                    if key not in seen:
+                        seen.add(key)
+                        hits.append((cand, known, d))
+                        break  # one finding per (candidate, known) is enough
+
+    return hits
+
+
+def _dep_names_in_skill(blob: str) -> list[str]:
+    """Extract package names from manifest sections in a skill blob.
+
+    Returns plain package names (no version info) from requirements.txt,
+    package.json, and pyproject.toml sections. Used by F-022 typosquat check.
+    """
+    names: list[str] = []
+    for m in _MANIFEST_HEADER_RE.finditer(blob):
+        fname = m.group("name").strip().lower()
+        body = m.group("body")
+
+        if _REQS_FILE_RE.match(fname):
+            for lm in _DEP_PKG_NAME_RE.finditer(body):
+                pkg = lm.group(1).split("=")[0].split(">")[0].split("<")[0]
+                pkg = pkg.split("[")[0].rstrip(",. \t")
+                if pkg and pkg not in names:
+                    names.append(pkg)
+
+        elif fname == "package.json":
+            for block_m in _PKG_JSON_UNPINNED_RE.finditer(body):
+                block_end = body.find("}", block_m.end())
+                if block_end == -1:
+                    block_end = len(body)
+                block_text = body[block_m.start():block_end + 1]
+                for dep_m in _PKG_JSON_DEP_RE.finditer(block_text):
+                    pkg = dep_m.group("pkg")
+                    if pkg and pkg not in names:
+                        names.append(pkg)
+
+        elif fname == "pyproject.toml":
+            for sec_m in _PYPROJECT_DEP_SECTION_RE.finditer(body):
+                sec_body = sec_m.group("body")
+                for lm in _PYPROJECT_DEP_LINE_RE.finditer(sec_body):
+                    pkg = lm.group(1).split("=")[0].split(">")[0].split("<")[0]
+                    pkg = pkg.split("[")[0].rstrip(",. \t").strip('"\'')
+                    if pkg and pkg not in names:
+                        names.append(pkg)
+
+    return names
+
+
+def _frontmatter_name(blob: str) -> str | None:
+    """Extract the `name:` field from the SKILL.md frontmatter section of a blob, or None."""
+    m = _SKILL_FRONTMATTER_NAME_RE.search(blob)
+    if m:
+        return m.group(1).strip()
+    return None
+
+
 # ---------- B13: installed-skill / plugin content vetting (ClawHavoc vector) ----------
 # CRITICAL: unambiguous malware signals (paste-staged payloads, credential/wallet theft,
 # and the ClawHavoc password-dialog social-engineering trick).
@@ -1516,6 +1696,34 @@ def check_installed_skills(ctx: Context) -> Finding:
                        "Pin all dependencies to exact versions (== X.Y.Z / exact semver) in skill "
                        "manifests to prevent supply-chain hijacking via a malicious package update.",
                        warns_unpinned)
+
+    # F-022: typosquatting detection — WARN (heuristic, OWASP AST02/AST04).
+    # Check skill dir keys, SKILL.md frontmatter name:, and dep package names.
+    # Non-redundant with C-038 (Unicode homoglyphs in MCP server names — distinct mechanism).
+    warns_squat: list[str] = []
+    for skill_name, blob in skills.items():
+        # Collect names: dir key + frontmatter name (if distinct) + dep package names
+        squat_candidates: list[str] = [skill_name]
+        fm_name = _frontmatter_name(blob)
+        if fm_name and fm_name.lower() != skill_name.lower():
+            squat_candidates.append(fm_name)
+        squat_candidates.extend(_dep_names_in_skill(blob))
+
+        for cand, known, d in _squat_hits(squat_candidates):
+            warns_squat.append(
+                f"{skill_name}: '{cand}' name resembles '{known}' "
+                f"(possible typosquat, edit distance {d})"
+            )
+
+    if warns_squat:
+        extra = f" (+{len(warns_squat) - 6} more)" if len(warns_squat) > 6 else ""
+        return _custom("B13", HIGH, WARN,
+                       "Possible typosquat name(s) in installed skill(s): "
+                       + "; ".join(warns_squat[:6]) + extra,
+                       "Verify the skill and its dependency names are not impersonating "
+                       "well-known packages (supply-chain AST02/AST04). Uninstall if "
+                       "provenance cannot be confirmed.",
+                       warns_squat)
 
     return _custom("B13", HIGH, PASS,
                    f"Scanned {n} installed skill(s); no shell-exec / exfiltration / obfuscation "
