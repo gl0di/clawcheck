@@ -3,6 +3,19 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.20.2] — 2026-06-25
+
+Enhanced markdown and policy-abuse security coverage for OpenClaw bootstrap and installed skill content; added stronger markdown exfiltration detection and two new C-0xx checks for hidden-trigger behavior and persona-role abuse.
+
+### Added
+- **B59 (C-079):** expanded markdown/image/link/a-anchor/code-fence heuristic coverage, including inline markdown links and HTML anchors with remote URLs containing data-bearing query strings.
+
+### Fixed
+- **B63/B64/B65/B66 registrations:** normalized check registration and i18n surfaces so new and expanded checks are discoverable through normal check pipelines.
+
+### Changed
+- **Testing and fixtures:** added focused fixtures and unit tests for B65/B66 and extended B59 regression coverage, plus completeness and integration updates for the new detections.
+
 ## [1.20.1] — 2026-06-25
 
 Fix linting/CI issues from the v1.20.0 release.
