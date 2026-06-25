@@ -3,6 +3,14 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.19.3] — 2026-06-25
+
+Automated schema-grounding check to enforce configuration path correctness.
+
+### Added
+- **Schema-grounding guard (C-010):** Added an automated unit test `tests/test_schema_grounding.py` that dynamically parses AST lookups of `dig()` to verify all configuration paths used in the codebase are properly grounded in the schema reference (`docs/research/openclaw-schema-recon.md`).
+
+
 ## [1.19.2] — 2026-06-25
 
 Tailored remediation prose for B3 (least privilege) and B4 (sandbox) checks. Remediations
