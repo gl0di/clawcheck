@@ -21,6 +21,7 @@ from .catalog import (
 )
 from .collector import _OWN_SKILL_NAMES, Context, _read_skill_text, dig, read_skill_python
 from .skillast import analyze_python
+from .textnorm import normalize_for_scan, obfuscation_signals
 
 
 def _is_posix() -> bool:
@@ -610,8 +611,9 @@ def check_bootstrap_injection(ctx: Context) -> Finding:
                         "Run on the host where workspace SOUL.md/AGENTS.md/TOOLS.md live.")
     ev = []
     for fname, text in ctx.bootstrap.items():
+        norm = normalize_for_scan(text)
         for pat in INJECTION_PATTERNS:
-            if pat.search(text):
+            if pat.search(norm):
                 ev.append(f"{fname}: matches '{pat.pattern[:40]}…'")
                 break
     if ev:
@@ -1036,8 +1038,9 @@ def check_installed_skills(ctx: Context) -> Finding:
         # the canonical "ignore previous instructions" phrase fires on its own. Co-located
         # real malware (paste-host) still scores CRITICAL via _SKILL_CRIT independently.
         cred_exfil_signal = _has_cred_exfil(blob) or _has_cred_exfil_cross_skill(blob)
+        _blob_norm = normalize_for_scan(blob)
         for label, standalone, rx in _SKILL_INJECTION:
-            if rx.search(blob) and (standalone or cred_exfil_signal):
+            if rx.search(_blob_norm) and (standalone or cred_exfil_signal):
                 high.append(f"{name}: injection directive — {label}")
         # AST analysis of the skill's Python files — catches obfuscation regex misses.
         # crit rules (obfuscated exec, getattr/import indirection) FAIL on their own;
@@ -2302,10 +2305,11 @@ def check_tool_output_trust(ctx: Context) -> Finding:
         )
 
     blob = ctx.bootstrap_blob
+    blob_norm = normalize_for_scan(blob)
 
     # FAIL: bootstrap explicitly orders the agent to obey external content.
-    if _B21_OBEY_RE.search(blob):
-        ev = [m.group() for m in _B21_OBEY_RE.finditer(blob)]
+    if _B21_OBEY_RE.search(blob_norm):
+        ev = [m.group() for m in _B21_OBEY_RE.finditer(blob_norm)]
         return _finding(
             "B21", FAIL,
             "Bootstrap explicitly instructs the agent to obey tool/web/email output: "
@@ -2317,7 +2321,7 @@ def check_tool_output_trust(ctx: Context) -> Finding:
         )
 
     # PASS: explicit trust-boundary rule present.
-    if _b21_has_trust_boundary(blob):
+    if _b21_has_trust_boundary(blob_norm):
         return _finding(
             "B21", PASS,
             "Bootstrap contains an explicit rule treating tool/web/email/MCP output "
@@ -4289,6 +4293,103 @@ def check_plugin_permission_mode(ctx: Context) -> Finding:
     )
 
 
+def check_unicode_obfuscation(ctx: Context) -> Finding:
+    """B58 — Unicode-obfuscated injection / hidden-text evasion.
+
+    Scans bootstrap files and installed skills for Unicode obfuscation that
+    hides injection directives from plain-text scanners.
+
+    FAIL    — an injection pattern matches the NORMALIZED text but NOT the raw
+              text (positive evidence of evasion: obfuscation was concealing a
+              real injection directive).
+    WARN    — invisible / bidi / confusable characters found but no hidden
+              injection underneath (could be legitimate i18n usage).
+    PASS    — normalization changes nothing meaningful; no injection found.
+    UNKNOWN — nothing to inspect (no bootstrap and no installed skills).
+    """
+    if not ctx.bootstrap and not ctx.installed_skills:
+        return _finding(
+            "B58", UNKNOWN,
+            "No bootstrap files or installed skills found — nothing to inspect for "
+            "Unicode obfuscation.",
+            "Run on the host where workspace SOUL.md/AGENTS.md/TOOLS.md and installed "
+            "skills live.",
+        )
+
+    fail_ev: list[str] = []   # evasion delta: injection hidden by obfuscation
+    warn_ev: list[str] = []   # obfuscation present but no hidden injection
+
+    # --- Bootstrap files ---
+    for fname, text in ctx.bootstrap.items():
+        norm = normalize_for_scan(text)
+        signals = obfuscation_signals(text)
+        if not signals:
+            continue
+        # Check whether normalization REVEALS an injection that was not visible raw.
+        hidden = False
+        for pat in INJECTION_PATTERNS:
+            if pat.search(norm) and not pat.search(text):
+                fail_ev.append(
+                    f"{fname}: obfuscation hides injection matching "
+                    f"'{pat.pattern[:40]}…' ({'; '.join(signals)})"
+                )
+                hidden = True
+                break
+        if not hidden:
+            warn_ev.append(
+                f"{fname}: Unicode obfuscation signals present "
+                f"({'; '.join(signals)}) but no hidden injection detected"
+            )
+
+    # --- Installed skills ---
+    for skill_name, blob in ctx.installed_skills.items():
+        norm = normalize_for_scan(blob)
+        signals = obfuscation_signals(blob)
+        if not signals:
+            continue
+        hidden = False
+        for pat in INJECTION_PATTERNS:
+            if pat.search(norm) and not pat.search(blob):
+                fail_ev.append(
+                    f"{skill_name}: obfuscation hides injection matching "
+                    f"'{pat.pattern[:40]}…' ({'; '.join(signals)})"
+                )
+                hidden = True
+                break
+        if not hidden:
+            warn_ev.append(
+                f"{skill_name}: Unicode obfuscation signals present "
+                f"({'; '.join(signals)}) but no hidden injection detected"
+            )
+
+    if fail_ev:
+        return _finding(
+            "B58", FAIL,
+            "Unicode obfuscation concealing injection directive(s): "
+            + "; ".join(fail_ev[:4]),
+            "Remove Unicode lookalike / invisible characters from bootstrap files "
+            "and installed skills. Re-run the audit to confirm no injection remains "
+            "after normalization.",
+            fail_ev,
+        )
+    if warn_ev:
+        return _finding(
+            "B58", WARN,
+            "Unicode obfuscation signals found (no hidden injection confirmed): "
+            + "; ".join(warn_ev[:4]),
+            "Review the flagged files for intentional Unicode obfuscation. Legitimate "
+            "RTL / i18n content is expected; invisible zero-width or Cyrillic/Greek "
+            "lookalike characters in ASCII-context prose are suspicious.",
+            warn_ev,
+        )
+    return _finding(
+        "B58", PASS,
+        "No Unicode obfuscation signals found in bootstrap files or installed skills.",
+        "Keep bootstrap files free of invisible / bidi-control / confusable characters "
+        "in ASCII-context prose.",
+    )
+
+
 CHECKS = [
     check_trifecta, check_secrets, check_gateway, check_least_privilege,
     check_sandbox, check_supply_chain, check_bootstrap_injection,
@@ -4311,6 +4412,7 @@ CHECKS = [
     check_fs_write_exposure,
     check_controlui_origins, check_plugin_permission_mode,
     check_hook_policy_bypass,
+    check_unicode_obfuscation,
 ]
 
 

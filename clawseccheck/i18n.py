@@ -393,6 +393,7 @@ TITLES: dict[str, dict[str, str]] = {
     "B55": {"he": "חשיפת כלי כתיבה למערכת הקבצים (כתיבה רחבה ללא תיחום)"},
     "B56": {"he": "מדיניות origin מתירנית ל-Control-UI (allowedOrigins \"*\")"},
     "B57": {"he": "אישור אוטומטי של תוסף (permissionMode=approve-all)"},
+    "B58": {"he": "הזרקה מעורפלת Unicode / עקיפת טקסט נסתר"},
     "C3": {"he": "גיבויים של SOUL.md / זיכרון"},
     "C4": {"he": "גרסת OpenClaw / היגיינת עדכון"},
     "C5": {"he": "בטיחות PATH של בינארי מקומי"},
@@ -596,6 +597,45 @@ PHRASES: dict[str, dict[str, str]] = {
         "he": "הגדר permissionMode ל-'ask' עבור התוסף/ים המפורט/ים כך שכל פעולה מורשית "
               "תאושר במפורש.",
     },
+
+    # ---- B58 (v1.17.0): Unicode-obfuscated injection / hidden-text evasion ----
+    # detail (UNKNOWN path)
+    "No bootstrap files or installed skills found — nothing to inspect for "
+    "Unicode obfuscation.": {
+        "he": "לא נמצאו קבצי אתחול או מיומנויות מותקנות — אין מה לבדוק לערפול Unicode.",
+    },
+    # fix (UNKNOWN path)
+    "Run on the host where workspace SOUL.md/AGENTS.md/TOOLS.md and installed "
+    "skills live.": {
+        "he": "הרץ על המארח שבו נמצאים קבצי workspace SOUL.md/AGENTS.md/TOOLS.md "
+              "והמיומנויות המותקנות.",
+    },
+    # fix (FAIL path)
+    "Remove Unicode lookalike / invisible characters from bootstrap files "
+    "and installed skills. Re-run the audit to confirm no injection remains "
+    "after normalization.": {
+        "he": "הסר תווי Unicode דומים / בלתי נראים מקבצי האתחול ומהמיומנויות המותקנות. "
+              "הרץ מחדש את הביקורת כדי לוודא שאין הזרקה לאחר נרמול.",
+    },
+    # fix (WARN path)
+    "Review the flagged files for intentional Unicode obfuscation. Legitimate "
+    "RTL / i18n content is expected; invisible zero-width or Cyrillic/Greek "
+    "lookalike characters in ASCII-context prose are suspicious.": {
+        "he": "בדוק את הקבצים המסומנים לאיתור ערפול Unicode מכוון. תוכן RTL / i18n "
+              "לגיטימי הוא צפוי; תווים בלתי נראים ברוחב אפס או תווי Cyrillic/Greek "
+              "הדומים לתווי ASCII בטקסט הקשר ASCII הם חשודים.",
+    },
+    # detail (PASS path)
+    "No Unicode obfuscation signals found in bootstrap files or installed skills.": {
+        "he": "לא נמצאו אותות ערפול Unicode בקבצי האתחול או במיומנויות המותקנות.",
+    },
+    # fix (PASS path)
+    "Keep bootstrap files free of invisible / bidi-control / confusable characters "
+    "in ASCII-context prose.": {
+        "he": "שמור על קבצי האתחול נקיים מתווים בלתי נראים / בקרת bidi / תווים מבלבלים "
+              "בטקסט הקשר ASCII.",
+    },
+
     # ---- C6 (C-052): hook-composition tool-policy drop (UNKNOWN advisory) ----
     "This OpenClaw version predates v2026.6.10, which fixed a hook-registry "
     "composition bug that could silently drop trusted tool policies at runtime. "
@@ -2287,6 +2327,28 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
                 _en_form.format(k=re.escape(_kind)),
                 {"he": _he_form.format(h=_kind_he)},
             ))
+
+    # ---- B58: Unicode-obfuscated injection / hidden-text evasion ----
+    # FAIL detail — whole string: "Unicode obfuscation concealing injection directive(s): <ev>"
+    raw.append((
+        r"Unicode obfuscation concealing injection directive\(s\): (.+)",
+        {"he": r"ערפול Unicode המסתיר הנחיית הזרקה: \1"},
+    ))
+    # B58 per-file FAIL evidence fragment: "<fname>: obfuscation hides injection matching '<pat>…' (<signals>)"
+    raw.append((
+        r"(.+): obfuscation hides injection matching '(.+)' \((.+)\)",
+        {"he": r"\1: ערפול מסתיר הזרקה התואמת '\2' (\3)"},
+    ))
+    # B58 WARN detail — whole string
+    raw.append((
+        r"Unicode obfuscation signals found \(no hidden injection confirmed\): (.+)",
+        {"he": r"אותות ערפול Unicode נמצאו (לא אושרה הזרקה נסתרת): \1"},
+    ))
+    # B58 per-file WARN evidence fragment: "<fname>: Unicode obfuscation signals present (<signals>) but no hidden injection detected"
+    raw.append((
+        r"(.+): Unicode obfuscation signals present \((.+)\) but no hidden injection detected",
+        {"he": r"\1: אותות ערפול Unicode קיימים (\2) אך לא זוהתה הזרקה נסתרת"},
+    ))
 
     compiled: list[tuple[re.Pattern[str], dict[str, str]]] = []
     for pattern_str, templates in raw:

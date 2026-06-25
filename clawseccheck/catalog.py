@@ -169,6 +169,12 @@ CATALOG: list[CheckMeta] = [
               HIGH, "hardening", "Zero Trust / Control-UI Origin"),
     CheckMeta("B57", "Plugin auto-approve (permissionMode=approve-all)",
               HIGH, "hardening", "Least Privilege / Plugin Approval"),
+    # B58 (v1.17.0): Unicode de-obfuscation pre-pass — detects injections hidden behind
+    # Cyrillic/Greek confusables, zero-width chars, and bidi-override controls.
+    # FAIL only on a confirmed evasion delta (injection visible post-norm, invisible raw);
+    # WARN on obfuscation presence without a confirmed injection (never a false-positive FAIL).
+    CheckMeta("B58", "Unicode-obfuscated injection / hidden-text evasion",
+              HIGH, "hardening", "Prompt Injection / Unicode Evasion", confidence="MEDIUM"),
     # advisory (not scored)
     CheckMeta("C3", "Backups of SOUL.md / memory", LOW, "advisory", "Backups", scored=False),
     CheckMeta("C4", "OpenClaw version / update hygiene", LOW, "advisory", "Patch hygiene", scored=False),
