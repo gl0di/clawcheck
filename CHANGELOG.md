@@ -3,6 +3,39 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.19.0] — 2026-06-25
+
+Behavioral intent analysis (wave 2): `--vet` now reasons about what a skill
+*does* versus what it *claims* — turning on the previously-dormant effect
+simulator, flagging capability–intent mismatches, and emitting a structured
+attestation request for the host agent to judge intent without the tool ever
+calling an LLM. Still local-only, offline, read-only; the new check is WARN-only
+and reports UNKNOWN rather than guess, so `home_safe` sees no false-positive.
+
+### Added
+- **Effect profile wired into vetting (F-018):** `check_installed_skills` now
+  runs the skillast effect simulator (built but unused since v1.16.0) over each
+  installed skill's Python and aggregates the reachable-effect profile
+  (eval/write/read/network under the hostile-input / poisoned-MCP /
+  attacker-default seeds, with guard state) onto `ctx.effect_profiles`, surfaced
+  as a `properties.effectProfile` block in SARIF. Purely additive — no verdict
+  changes.
+- **Capability–intent mismatch — B62 (F-019):** compares a skill's declared
+  category (SKILL.md name/description → a curated expected-capability vocabulary)
+  against its actual effect profile + import families, and flags a surprising
+  capability the declaration does not imply (e.g. a "markdown formatter" that
+  opens a socket) as WARN with a surprise-magnitude note. Conservative by
+  design: vague/generic declarations are permissive and never flag; UNKNOWN when
+  there is no description, no Python, or no clear category.
+- **Structured attestation requests (F-020):** the `--json` payload gains an
+  `intentAttestationRequests` array — per mismatch-flagged skill, a machine-
+  readable record of the declared purpose, actual capability set, the
+  mismatches with redacted evidence, a computed risk, and a plain-language
+  question for the user's host agent to answer. The tool never calls an LLM or
+  the network; the host agent judges intent over structured capability flags,
+  not raw skill code, so the attestation is not exposed to prompt injection from
+  the code under review.
+
 ## [1.18.0] — 2026-06-25
 
 Skill-vetting detector batch (SkillSpector-parity, wave 1): nine new
