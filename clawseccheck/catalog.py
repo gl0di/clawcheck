@@ -189,6 +189,15 @@ CATALOG: list[CheckMeta] = [
     # WARN on path-alone. Conservative gating (path + verb) prevents false-positive FAILs.
     CheckMeta("B61", "Cross-agent config snooping / credential theft",
               HIGH, "hardening", "Credential Theft / Supply Chain", confidence="MEDIUM"),
+    # B62 (F-019): Capability–intent mismatch — declared purpose (SKILL.md name/description)
+    # conflicts with actual reachable capabilities (effect_profiles + import-family scan).
+    # The HIGHEST false-positive risk check in the project — WARN-only, MEDIUM, advisory.
+    # UNKNOWN when no SKILL.md description, no Python, or a vague/permissive category.
+    # Only fires when the declared category is CLEAR+NARROW and the surprising capability
+    # is MEANINGFUL (high-surprise single family OR ≥2 co-occurring surprising families).
+    CheckMeta("B62", "Capability–intent mismatch (declared purpose vs actual behaviour)",
+              MEDIUM, "advisory", "Excessive Agency / Inaccurate Capability Declaration",
+              scored=False, confidence="MEDIUM"),
     # advisory (not scored)
     CheckMeta("C3", "Backups of SOUL.md / memory", LOW, "advisory", "Backups", scored=False),
     CheckMeta("C4", "OpenClaw version / update hygiene", LOW, "advisory", "Patch hygiene", scored=False),
@@ -268,6 +277,8 @@ OWASP_MAP = {
     "B55": ("LLM06", "LLM04"),
     "B56": ("LLM01",),
     "B57": ("LLM06", "LLM03"),
+    # B62: Excessive Agency (LLM06) — skill acts beyond its declared scope.
+    "B62": ("LLM06",),
     "C4": ("LLM03",),
     "C5": ("LLM03",),
 }

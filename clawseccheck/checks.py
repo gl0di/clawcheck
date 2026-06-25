@@ -5806,6 +5806,312 @@ def check_agent_snooping(ctx: Context) -> Finding:
     )
 
 
+# ---------------------------------------------------------------------------
+# B62 (F-019): Capability–intent mismatch
+# ---------------------------------------------------------------------------
+# Keyword vocabulary: maps a declared-category label → frozenset of capability
+# families that are EXPECTED for that category. Capabilities NOT in the set are
+# "surprising" and may trigger a WARN when the declaration is CLEAR+NARROW.
+#
+# Capability family names (used in effect_profiles + import scan):
+#   "network"  — outbound HTTP/socket/urllib/requests/aiohttp
+#   "exec"     — subprocess/os.system/eval/exec (process execution)
+#   "write"    — filesystem write (open-for-write / shutil.copy / os.rename / etc.)
+#   "read"     — filesystem read  (benign for most categories — never surprises)
+#   "cred"     — credential / env-var / secret-store access
+#
+# PERMISSIVE categories (vague / generic): never flag regardless of capabilities.
+
+# High-surprise families per narrow category.  Everything NOT in this set is
+# considered surprising for that category.
+_B62_EXPECTED: dict[str, frozenset] = {
+    # text-only: no side-effects expected
+    "formatter":    frozenset({"read"}),
+    "linter":       frozenset({"read"}),
+    "prettifier":   frozenset({"read"}),
+    "summarizer":   frozenset({"read"}),
+    "summariser":   frozenset({"read"}),
+    "parser":       frozenset({"read"}),
+    "converter":    frozenset({"read"}),
+    "template":     frozenset({"read"}),
+    "templater":    frozenset({"read"}),
+    "renderer":     frozenset({"read"}),
+    "docs":         frozenset({"read"}),
+    "documentation": frozenset({"read"}),
+    "generator":    frozenset({"read", "write"}),    # doc/code gen may write
+    # network-expected
+    "fetcher":      frozenset({"read", "network"}),
+    "downloader":   frozenset({"read", "network", "write"}),
+    "scraper":      frozenset({"read", "network"}),
+    "http":         frozenset({"read", "network"}),
+    "api":          frozenset({"read", "network"}),
+    "api-client":   frozenset({"read", "network"}),
+    "webhook":      frozenset({"read", "network"}),
+    "rss":          frozenset({"read", "network"}),
+    "browser":      frozenset({"read", "network"}),
+    "browse":       frozenset({"read", "network"}),
+    # exec/write-expected
+    "installer":    frozenset({"read", "write", "exec", "network"}),
+    "setup":        frozenset({"read", "write", "exec", "network"}),
+    "bootstrap":    frozenset({"read", "write", "exec", "network"}),
+    "deploy":       frozenset({"read", "write", "exec", "network"}),
+    "deployer":     frozenset({"read", "write", "exec", "network"}),
+    # search/data: read-oriented
+    "search":       frozenset({"read", "network"}),
+    "index":        frozenset({"read", "write"}),
+    "database":     frozenset({"read", "write"}),
+    "store":        frozenset({"read", "write"}),
+}
+
+# Keyword substrings that mark a declaration as PERMISSIVE (vague).
+# If ANY of these words appear in the combined name+description, the category is
+# considered unrecognised/vague → UNKNOWN (never flag).
+_B62_PERMISSIVE_KEYWORDS = frozenset({
+    "helper", "assistant", "utility", "tool", "general", "generic",
+    "misc", "miscellaneous", "various", "multi", "all-in-one", "allinone",
+    "everything", "anything", "suite", "collection", "framework",
+    "integration", "automation", "workflow", "pipeline",
+})
+
+# High-surprise single families: a single unreported capability in this set is
+# surprising enough ON ITS OWN to trigger a WARN for text-only categories.
+_B62_HIGH_SURPRISE = frozenset({"network", "exec", "cred"})
+
+# Import-family patterns: lightweight scan of Python source text for imports
+# that indicate a capability family even without taint tracking.
+_B62_IMPORT_NET_RE = re.compile(
+    r"\b(?:import\s+(?:requests?|urllib|http\.client|aiohttp|httpx|"
+    r"socket|websockets?|paramiko|ftplib|smtplib|imaplib|poplib)|"
+    r"from\s+(?:requests?|urllib|aiohttp|httpx)\s+import)\b",
+    re.I,
+)
+_B62_IMPORT_EXEC_RE = re.compile(
+    r"\b(?:import\s+(?:subprocess|pty|pexpect)|"
+    r"from\s+subprocess\s+import|"
+    r"\bos\.system\b|\bos\.exec[lv]p?e?\b|\beval\s*\(|\bexec\s*\()\b",
+    re.I,
+)
+_B62_IMPORT_CRED_RE = re.compile(
+    r"\b(?:import\s+(?:keyring|gnupg|cryptography|paramiko)|"
+    r"from\s+(?:keyring|cryptography)\s+import|"
+    r"os\.environ\s*\[|os\.getenv\s*\(|"
+    r"(?:password|secret|api[_-]?key|token)\s*[:=])\b",
+    re.I,
+)
+_B62_IMPORT_WRITE_RE = re.compile(
+    r"\bopen\s*\([^)]*['\"]w|"
+    r"\bshutil\.(?:copy|move|rmtree|copyfile)\b|"
+    r"\bos\.(?:rename|replace|remove|unlink|mkdir|makedirs)\b|"
+    r"\bpathlib\.Path[^)]*\.write_",
+    re.I,
+)
+
+# Regex to extract `description:` from the SKILL.md frontmatter in a blob.
+_B62_DESCRIPTION_RE = re.compile(
+    r"^# file:\s+SKILL\.md\s*\n---\s*\n(?:.*?\n)*?description:\s*([^\n#]+)",
+    re.MULTILINE,
+)
+
+
+def _b62_extract_declaration(blob: str, skill_dir_name: str) -> tuple[str, str]:
+    """Return (name, description) from the SKILL.md frontmatter in *blob*.
+
+    Falls back to the skill directory name for `name` when the frontmatter is
+    missing.  Either value may be an empty string.
+    """
+    name = (_frontmatter_name(blob) or skill_dir_name or "").strip()
+    desc_m = _B62_DESCRIPTION_RE.search(blob)
+    description = desc_m.group(1).strip() if desc_m else ""
+    return name, description
+
+
+def _b62_classify_category(name: str, description: str) -> str | None:
+    """Map the declared name+description to a category key in _B62_EXPECTED.
+
+    Returns:
+        A key from _B62_EXPECTED  — the declared category is narrow and recognised.
+        "PERMISSIVE"              — vague/generic declaration, never flag.
+        None                      — no recognised category (treat as UNKNOWN).
+    """
+    combined = (name + " " + description).lower()
+
+    # Permissive guard first: if ANY vague word appears, stop immediately.
+    for kw in _B62_PERMISSIVE_KEYWORDS:
+        if re.search(r"\b" + re.escape(kw) + r"\b", combined):
+            return "PERMISSIVE"
+
+    # Check if any narrow category keyword appears as a substring.
+    for key in _B62_EXPECTED:
+        # Use word-boundary match so "parser" doesn't match "comparator"
+        if re.search(r"\b" + re.escape(key) + r"\b", combined):
+            return key
+
+    return None
+
+
+def _b62_actual_families(
+    skill_name: str,
+    ctx: "Context",
+    py_sources: list[tuple[str, str]],
+) -> frozenset:
+    """Compute the set of actual capability families for *skill_name*.
+
+    Sources (both additive — union):
+    1. ctx.effect_profiles[skill_name]: reachable_effects entries from F-018.
+    2. Light import-family scan of the skill's Python source text.
+    """
+    families: set[str] = set()
+
+    # 1. Effect profiles (F-018 substrate)
+    for ep in ctx.effect_profiles.get(skill_name, []):
+        for eff in ep.get("reachable_effects", []):
+            # effect names from skillast: "network", "exec", "write", "read", "eval"
+            if eff in ("network", "exec", "write", "read", "eval", "cred"):
+                families.add(eff)
+            elif eff == "eval":
+                families.add("exec")  # treat eval as exec for mismatch purposes
+
+    # 2. Import scan — catches patterns the taint tracker may not reach
+    for _relpath, src in py_sources:
+        if _B62_IMPORT_NET_RE.search(src):
+            families.add("network")
+        if _B62_IMPORT_EXEC_RE.search(src):
+            families.add("exec")
+        if _B62_IMPORT_CRED_RE.search(src):
+            families.add("cred")
+        if _B62_IMPORT_WRITE_RE.search(src):
+            families.add("write")
+
+    return frozenset(families)
+
+
+def _b62_surprising_families(
+    actual: frozenset,
+    expected: frozenset,
+) -> frozenset:
+    """Return capability families that are ACTUAL but NOT in EXPECTED."""
+    return actual - expected
+
+
+def check_capability_intent_mismatch(ctx: Context) -> Finding:
+    """B62 (F-019) — Capability–intent mismatch (declared purpose vs actual behaviour).
+
+    Compares each installed skill's SKILL.md declared name/description (its stated
+    category) against its actual reachable capabilities from ctx.effect_profiles and a
+    light import-family scan.
+
+    WARN    — declared category is CLEAR+NARROW and actual capabilities include at least
+              one HIGH-SURPRISE family (network/exec/cred) not in the expected set for
+              that category, OR ≥2 co-occurring surprising families.  MEDIUM only.
+    PASS    — all skills either match their declared category or have no surprising caps.
+    UNKNOWN — no installed skills, no Python sources, or every skill's category is
+              vague/unrecognised (the PERMISSIVE guard triggers) — cannot assess.
+
+    This is the highest false-positive-risk check.  Conservative by design:
+    - Only WARN, never FAIL.
+    - Vague/generic declarations (helper, assistant, utility, tool, …) → UNKNOWN.
+    - A single low-surprise family (file read/write for a text-only tool) does NOT flag.
+    - A "formatter" with network capability → WARN (high surprise).
+    - A "downloader" with network → PASS (expected).
+    """
+    if not ctx.installed_skills:
+        return _finding(
+            "B62", UNKNOWN,
+            "No installed skills found — capability–intent mismatch cannot be assessed.",
+            "Run on the host where installed skills live "
+            "(~/.openclaw/skills, workspace/skills).",
+        )
+
+    warn_ev: list[str] = []
+    any_clear_narrow = False
+    any_with_py = False
+
+    for skill_name, blob in ctx.installed_skills.items():
+        py_sources = ctx.installed_skill_py.get(skill_name, [])
+        if py_sources:
+            any_with_py = True
+
+        name, description = _b62_extract_declaration(blob, skill_name)
+
+        # No declaration at all → cannot classify, skip this skill.
+        if not name and not description:
+            continue
+
+        category = _b62_classify_category(name, description)
+
+        # Vague / unrecognised → UNKNOWN path for this skill; skip.
+        if category is None or category == "PERMISSIVE":
+            continue
+
+        any_clear_narrow = True
+
+        # No Python source → no actual capabilities to measure.
+        if not py_sources:
+            continue
+
+        expected = _B62_EXPECTED[category]
+        actual = _b62_actual_families(skill_name, ctx, py_sources)
+
+        # No actual capabilities detected (benign or not analysable) → skip.
+        if not actual:
+            continue
+
+        surprising = _b62_surprising_families(actual, expected)
+        if not surprising:
+            continue
+
+        # Gating: require MEANINGFUL surprise.
+        #   - Any single HIGH-SURPRISE family (network, exec, cred) for a text-only cat.
+        #   - OR ≥2 surprising families for any narrow category.
+        high_s = surprising & _B62_HIGH_SURPRISE
+        if high_s or len(surprising) >= 2:
+            surprise_str = ", ".join(sorted(surprising))
+            warn_ev.append(
+                f"{skill_name}: declared as '{category}' but has reachable "
+                f"{surprise_str} capabilities"
+            )
+
+    # Outcome logic
+    if not any_clear_narrow:
+        return _finding(
+            "B62", UNKNOWN,
+            "No clear-category skill declarations found — all skills have vague, "
+            "unrecognised, or missing descriptions (category–intent check skipped).",
+            "Add a specific description: field to each skill's SKILL.md so its "
+            "declared purpose can be audited against its actual capabilities.",
+        )
+
+    if not any_with_py:
+        return _finding(
+            "B62", UNKNOWN,
+            "No Python source files found in installed skills — "
+            "actual capabilities cannot be assessed.",
+            "Ensure skill Python files are present and readable for capability analysis.",
+        )
+
+    if warn_ev:
+        ev_summary = "; ".join(warn_ev[:4])
+        extra = f" (+{len(warn_ev) - 4} more)" if len(warn_ev) > 4 else ""
+        return _finding(
+            "B62", WARN,
+            "Capability–intent mismatch: skill(s) have capabilities that exceed their "
+            "declared purpose — " + ev_summary + extra,
+            "Review the flagged skills. If the extra capability is intentional, update "
+            "the SKILL.md description to accurately declare it. If not, remove the "
+            "undeclared capability (network access, exec, credential reads) from the "
+            "skill — least-privilege principle applies to skills as well as agents.",
+            warn_ev,
+        )
+
+    return _finding(
+        "B62", PASS,
+        "No capability–intent mismatches found — all audited skills operate within "
+        "their declared capability scope.",
+        "Keep SKILL.md descriptions accurate as skills evolve so this check "
+        "remains meaningful.",
+    )
+
+
 CHECKS = [
     check_trifecta, check_secrets, check_gateway, check_least_privilege,
     check_sandbox, check_supply_chain, check_bootstrap_injection,
@@ -5832,6 +6138,7 @@ CHECKS = [
     check_markdown_image_exfil,
     check_prompt_self_replication,
     check_agent_snooping,
+    check_capability_intent_mismatch,
 ]
 
 

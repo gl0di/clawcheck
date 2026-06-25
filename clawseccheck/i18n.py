@@ -397,6 +397,7 @@ TITLES: dict[str, dict[str, str]] = {
     "B59": {"he": "דליפת נתונים דרך תמונת Markdown (URL מרוחק)"},
     "B60": {"he": "הנחיית שכפול-עצמי של פרומפט / הפצה (ATLAS AML.T0061)"},
     "B61": {"he": "ריגול בתצורת סוכן אחר / גניבת פרטי כניסה"},
+    "B62": {"he": "אי-התאמה בין יכולות למטרה המוצהרת"},
     "C3": {"he": "גיבויים של SOUL.md / זיכרון"},
     "C4": {"he": "גרסת OpenClaw / היגיינת עדכון"},
     "C5": {"he": "בטיחות PATH של בינארי מקומי"},
@@ -734,6 +735,51 @@ PHRASES: dict[str, dict[str, str]] = {
     # fix (PASS path)
     "Ensure installed skills access only their own files and declared resources.": {
         "he": "וודא שהמיומנויות המותקנות ניגשות רק לקבצים שלהן ולמשאבים המוצהרים.",
+    },
+
+    # ---- B62 (F-019): Capability–intent mismatch ----
+    # UNKNOWN paths
+    "No installed skills found — capability–intent mismatch cannot be assessed.": {
+        "he": "לא נמצאו מיומנויות מותקנות — לא ניתן להעריך אי-התאמה בין יכולות למטרה.",
+    },
+    "No clear-category skill declarations found — all skills have vague, "
+    "unrecognised, or missing descriptions (category–intent check skipped).": {
+        "he": "לא נמצאו הצהרות קטגוריה ברורות — לכל המיומנויות תיאורים מעורפלים, "
+              "לא מזוהים או חסרים (בדיקת קטגוריה–מטרה דולגה).",
+    },
+    "Add a specific description: field to each skill's SKILL.md so its "
+    "declared purpose can be audited against its actual capabilities.": {
+        "he": "הוסף שדה description: ספציפי ל-SKILL.md של כל מיומנות כדי שניתן "
+              "יהיה לבדוק את מטרתה המוצהרת מול יכולותיה בפועל.",
+    },
+    "No Python source files found in installed skills — "
+    "actual capabilities cannot be assessed.": {
+        "he": "לא נמצאו קבצי קוד Python במיומנויות המותקנות — "
+              "לא ניתן להעריך יכולות בפועל.",
+    },
+    "Ensure skill Python files are present and readable for capability analysis.": {
+        "he": "ודא שקבצי Python של המיומנות נוכחים וניתנים לקריאה לניתוח יכולות.",
+    },
+    # WARN fix
+    "Review the flagged skills. If the extra capability is intentional, update "
+    "the SKILL.md description to accurately declare it. If not, remove the "
+    "undeclared capability (network access, exec, credential reads) from the "
+    "skill — least-privilege principle applies to skills as well as agents.": {
+        "he": "בדוק את המיומנויות המסומנות. אם היכולת הנוספת מכוונת, עדכן את "
+              "תיאור SKILL.md כדי להצהיר עליה במדויק. אם לא, הסר את היכולה "
+              "הלא-מוצהרת (גישה לרשת, exec, קריאת פרטי כניסה) מהמיומנות — "
+              "עיקרון הפריבילגיות המינימליות חל גם על מיומנויות.",
+    },
+    # PASS
+    "No capability–intent mismatches found — all audited skills operate within "
+    "their declared capability scope.": {
+        "he": "לא נמצאו אי-התאמות בין יכולות למטרה — כל המיומנויות שנבדקו פועלות "
+              "בתחום יכולותיהן המוצהר.",
+    },
+    "Keep SKILL.md descriptions accurate as skills evolve so this check "
+    "remains meaningful.": {
+        "he": "שמור על דיוק תיאורי SKILL.md ככל שהמיומנויות מתפתחות כדי שבדיקה "
+              "זו תישאר משמעותית.",
     },
 
     # ---- F-022: typosquatting — skill/dep name resembles well-known name ----
@@ -2668,6 +2714,21 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
     raw.append((
         r"(.+): foreign-agent config path literal '(.+)' found \(no read verb in context\)",
         {"he": r"\1: נמצא ליטרל נתיב תצורה של סוכן אחר '\2' (ללא פועל קריאה בהקשר)"},
+    ))
+
+    # ---- B62: Capability–intent mismatch ----
+    # B62 WARN detail — whole string:
+    # "Capability–intent mismatch: skill(s) have capabilities that exceed their declared purpose — <ev>"
+    raw.append((
+        r"Capability–intent mismatch: skill\(s\) have capabilities that exceed their "
+        r"declared purpose — (.+)",
+        {"he": r"אי-התאמה בין יכולות למטרה: למיומנות/ות יכולות החורגות ממטרתן המוצהרת — \1"},
+    ))
+    # B62 per-skill WARN evidence:
+    # "<skill>: declared as '<category>' but has reachable <caps> capabilities"
+    raw.append((
+        r"(.+): declared as '(.+)' but has reachable (.+) capabilities",
+        {"he": r"\1: מוצהר כ-'\2' אך יש לו יכולות \3 נגישות"},
     ))
 
     # ---- C-038 TP2: MCP server name obfuscation (suspicious) ----
