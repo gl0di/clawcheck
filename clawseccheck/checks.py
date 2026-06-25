@@ -5025,8 +5025,12 @@ def check_multiagent_exposure(ctx: Context) -> Finding:
     deliberate light scored nudge layered on A1 — capped at WARN, never a hard FAIL,
     so it cannot introduce a new FAIL on real configs (§5).
 
-    WARN    — multi-agent topology + global trifecta + no approval gate.
-    PASS    — multi-agent topology present but the trifecta is incomplete or a gate exists.
+    WARN    — multi-agent topology with no approval gate and either:
+              (a) global trifecta fully active, or
+              (b) open ingress + elevated tool sender scope despite missing explicit
+                  sensitive-data leg.
+    PASS    — multi-agent topology present but none of the warn conditions apply, or a gate
+              exists.
     UNKNOWN — no multi-agent topology (single agent; A1 already covers that case).
     """
     cfg = ctx.config
@@ -5037,8 +5041,20 @@ def check_multiagent_exposure(ctx: Context) -> Finding:
             "trifecta exposure does not apply (single-agent trifecta is covered by A1).",
             "—",
         )
+    open_ch = _open_channels(cfg)
     legs = _trifecta_legs(ctx)
     if not all(legs.values()):
+        if open_ch and bool(dig(cfg, "tools.elevated.allowFrom")) and not _has_approval_gate(cfg):
+            return _finding(
+                "B46", WARN,
+                "Multiple agents/subagents can be spawned, open ingress exists, and "
+                "elevated tools are sender-restricted (not tightly approval-gated), "
+                "so a multi-agent topology can still amplify an injection via elevated "
+                "actions.",
+                "Reduce sender surface for elevated tooling and/or set an approval "
+                "gate (tools.exec.mode='ask'/'allowlist'). Do not rely on "
+                "coarse allowFrom for elevated tooling with open channels.",
+            )
         return _finding(
             "B46", PASS,
             "Multiple agents/subagents can be spawned, but the global lethal trifecta "
@@ -5244,7 +5260,7 @@ def check_fs_write_exposure(ctx: Context) -> Finding:
 
     A write-capable tool (fs_write / apply_patch) explicitly listed in the tool
     allowlist lets the agent create or overwrite files. Unscoped — reachable by a
-    wildcard sender allowlist or an open channel with no approval gate — untrusted
+    wildcard sender allowlist or an open channel without write-specific scoping — untrusted
     input can drive arbitrary writes (tamper / persistence). Advisory (scored=False):
     it names the capability and feeds RISK-12; the scored write/least-privilege
     dimensions stay with B3/B22/B31 so this never moves the grade.
@@ -5252,7 +5268,7 @@ def check_fs_write_exposure(ctx: Context) -> Finding:
     UNKNOWN — no tool allowlist declared (tools.allow / gateway.tools.allow absent):
               fs-write grants are not enumerable from config.
     PASS    — no write-capable tool granted, OR one is granted but scoped (an approval
-              gate, or a tight non-wildcard sender allowlist).
+              gate for non-open ingress, or a tight non-wildcard sender allowlist).
     WARN    — write tool granted, no approval gate and no explicit sender allowlist,
               but no proven broad reach.
     FAIL    — write tool granted AND reachable by untrusted senders (wildcard
@@ -5295,7 +5311,10 @@ def check_fs_write_exposure(ctx: Context) -> Finding:
     wildcard = allow_from == "*" or (isinstance(allow_from, list) and "*" in allow_from)
     open_ch = _open_channels(cfg)
 
-    if gated or tight_allowlist:
+    # Approval via tools.exec affects exec/shell-like actions; it is not a
+    # write-specific boundary. Treat fs_write/apply_patch as scoped only when
+    # there is a tight sender allowlist or no open-ingress channel.
+    if tight_allowlist or (gated and not open_ch):
         return _finding(
             "B55", PASS,
             f"Filesystem-write tool granted ({label}) but scoped by an approval gate "
@@ -5312,11 +5331,15 @@ def check_fs_write_exposure(ctx: Context) -> Finding:
                       "elevated tools)")
         if open_ch:
             ev.append(f"open-ingress channel(s): {', '.join(open_ch)}")
-        ev.append("no approval gate (tools.exec.mode is not deny/allowlist/ask/auto)")
+        if not gated:
+            ev.append("no approval gate (tools.exec.mode is not deny/allowlist/ask/auto)")
+        elif open_ch:
+            ev.append("open-ingress bypasses exec-style approval and can still drive "
+                      "write-capable tools")
         return _finding(
             "B55", FAIL,
             f"Broad filesystem-write capability ({label}) is reachable by untrusted "
-            f"senders with no approval gate, so untrusted input can drive arbitrary "
+            f"senders without write-specific scoping, so untrusted input can drive arbitrary "
             f"file writes (tamper / persistence).",
             "Add an approval gate (tools.exec.mode='ask') and restrict "
             "tools.elevated.allowFrom to an explicit allowlist (no '*'); lock open "

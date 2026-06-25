@@ -1317,6 +1317,13 @@ PHRASES: dict[str, dict[str, str]] = {
     "Point --vet at a skill dir or SKILL.md.": {
         "he": "הכוון את --vet לתיקיית skill או ל-SKILL.md.",
     },
+    # fix (WARN path — extension/polygot/binary warning)
+    "Review the flagged files for extension mismatch, polyglot structures, or unexpected binaries.": {
+        "he": (
+            "בדוק את הקבצים המסומנים לאיתור חוסר התאמה בסיומות, מבנים פוליגוט, "
+            "או קבצים בינאריים לא צפויים."
+        ),
+    },
     # B13 static evidence label fragments (technical classifiers — kept verbatim in output
     # but the label itself has a Hebrew translation for any standalone phrase lookup)
     "secret/credential exfiltration (same-line)": {
@@ -2192,6 +2199,11 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
             r"Suspicious patterns in installed skill\(s\): (.+)",
             {"he": r"דפוסים חשודים בכישור/ים מותקנים: \1"},
         ),
+        # B13: WARN detail — general installed-skill warning surface
+        (
+            r"Warnings in installed skill\(s\): (.+)",
+            {"he": r"אזהרות בכישור/ים מותקנים: \1"},
+        ),
         # B13: PASS detail with count
         (
             r"Scanned (\d+) installed skill\(s\); no shell-exec / exfiltration / obfuscation patterns found\.",
@@ -2707,6 +2719,15 @@ def _build_rules() -> list[tuple[re.Pattern[str], dict[str, str]]]:
         ),
 
         # ---- B55: filesystem-write tool exposure (C-013) ----
+        # New FAIL wording in current branch: open ingress + writable tools without write-specific scoping.
+        (
+            r"Broad filesystem-write capability \((.+)\) is reachable by untrusted "
+            r"senders without write-specific scoping, so untrusted input can drive "
+            r"arbitrary file writes \(tamper / persistence\)\.",
+            {"he": r"יכולת כתיבה רחבה למערכת הקבצים (\1) נגישה לשולחים לא מהימנים "
+                   r"ללא תיחום לכתיבה, כך שקלט לא מהימן יכול להניע כתיבות קבצים "
+                   r"שרירותיות (שיבוש / השתרשות)."},
+        ),
         # FAIL — broad fs-write reachable by untrusted senders, no approval gate.
         (
             r"Broad filesystem-write capability \((.+)\) is reachable by untrusted "

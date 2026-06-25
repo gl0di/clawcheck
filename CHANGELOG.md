@@ -3,6 +3,21 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.20.6] — 2026-06-25
+
+Cleaned up i18n/compliance drift and resolved test-environment edge cases discovered during the final pre-release sweep.
+
+### Added
+- No new checks added in this release.
+
+### Fixed
+- Restored full localization coverage for `B13`/`B55` warning/fail detail texts to prevent untranslated detail strings in Hebrew.
+- Fixed test infrastructure regressions in `--vet` fixtures by ensuring clean fixture paths and removing stale bytecode assumptions.
+- Removed deprecated AST handling (`ast.Str`) in grounding tests to avoid Python 3.12+ deprecation noise.
+
+### Changed
+- `test_rtl.py` now resolves fixture paths via a repo-root base path, preventing environment-dependent failures in local/CI layouts.
+
 ## [1.20.5] — 2026-06-25
 
 Release process hardening and documentation alignment updates.

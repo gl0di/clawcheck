@@ -66,9 +66,6 @@ def _parse_source_dig_paths() -> set[str]:
                     # Handle python 3.8+ Constant
                     if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
                         paths.add(arg.value)
-                    # Handle older python versions Str
-                    elif isinstance(arg, ast.Str):  # pragma: no cover
-                        paths.add(arg.s)
             self.generic_visit(node)
 
     for py_file in SOURCE_DIR.rglob("*.py"):

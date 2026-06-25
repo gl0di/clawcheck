@@ -69,6 +69,17 @@ def test_tight_sender_allowlist_passes(tmp_path):
     assert _b55(home).status == PASS
 
 
+def test_open_channel_not_scoped_by_exec_gate_fails(tmp_path):
+    home = _write_config(
+        tmp_path,
+        '{"channels": {"telegram": {"dmPolicy": "open"}},'
+        ' "tools": {"allow": ["fs_write"], "exec": {"mode": "ask"}}}',
+    )
+    f = _b55(home)
+    assert f.status == FAIL, f.detail
+    assert any("open-ingress channel(s)" in e for e in f.evidence)
+
+
 # --------------------------------------------------------------------------- WARN
 def test_ungated_write_without_broad_reach_warns(tmp_path):
     home = _write_config(

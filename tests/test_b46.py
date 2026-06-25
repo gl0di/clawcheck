@@ -1,7 +1,8 @@
 """B46 — multi-agent trifecta exposure (config-only, scored, capped at WARN).
 
-Fires only on the narrow, dangerous combo: subagents/multiple agents CAN be spawned
-AND all three global trifecta legs are active AND no exec approval gate exists.
+Fires when multi-agent/subagent topology combines with broad open-channel exposure and
+insufficient approval gating, including a dedicated sub-case for elevated-sender
+allowFrom without the full sensitive-leg being present.
 """
 from pathlib import Path
 
@@ -59,7 +60,7 @@ def test_b46_gate_present_passes():
     assert r.status == "PASS"
 
 
-# ---- subagents but trifecta incomplete -> PASS ----
+# ---- subagents but trifecta incomplete + elevated sender delegation -> WARN ----
 def test_b46_incomplete_trifecta_passes():
     # subagents present, but no sensitive-data leg (no password, no db tools)
     cfg = {
@@ -69,6 +70,16 @@ def test_b46_incomplete_trifecta_passes():
     }
     r = check_multiagent_exposure(_ctx(cfg))
     assert r.status == "PASS"
+
+
+def test_b46_elevated_only_triggers_warn_for_open_channel():
+    cfg = {
+        "channels": {"tg": {"dmPolicy": "open"}},
+        "tools": {"allow": ["send_email"], "elevated": {"allowFrom": ["owner-111"]}},
+        "agents": {"subagents": {"maxConcurrent": 4}},
+    }
+    r = check_multiagent_exposure(_ctx(cfg))
+    assert r.status == "WARN"
 
 
 # ---- B46 is capped at WARN: it must NEVER FAIL (cannot add new FAILs on real configs) ----
