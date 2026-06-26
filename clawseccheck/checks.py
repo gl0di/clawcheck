@@ -2766,7 +2766,7 @@ def check_egress(ctx: Context) -> Finding:
     allow = (dig(cfg, "gateway.egress") or dig(cfg, "network.egress")
              or cfg.get("egress") or dig(cfg, "tools.http.allow"))
     surface = []
-    chans = list(_channels(cfg))
+    chans = [n for n, c in _channels(cfg).items() if isinstance(c, dict)]
     if chans:
         surface.append(f"channels ({', '.join(chans[:4])})")
     ext = [s for s in ctx.installed_skills if any(h in s.lower() for h in _EXT_SKILL_HINTS)]
@@ -2806,10 +2806,10 @@ def check_egress_inventory(ctx: Context) -> Finding:
 
     channels = _channels(cfg)
     for name, chan in channels.items():
-        dm = group = None
-        if isinstance(chan, dict):
-            dm = chan.get("dmPolicy")
-            group = chan.get("groupPolicy")
+        if not isinstance(chan, dict):
+            continue
+        dm = chan.get("dmPolicy")
+        group = chan.get("groupPolicy")
         bits = []
         if dm:
             bits.append(f"dmPolicy={dm}")
@@ -4285,7 +4285,7 @@ def check_sender_identity(ctx: Context) -> Finding:
     PASS   — channels exist and neither dangerous flag is set.
     UNKNOWN — no channels configured (cannot assess).
     """
-    ch = _channels(ctx.config)
+    ch = {k: v for k, v in _channels(ctx.config).items() if isinstance(v, dict)}
     if not ch:
         return _finding(
             "B30", UNKNOWN,
