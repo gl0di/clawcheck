@@ -5264,9 +5264,10 @@ def _approval_bypass_actors(
     auto_gate_classes: set[str],
     high_classes: set[str],
 ) -> list[str]:
-    """Return actor paths that can repeatedly bypass approvals for high-blast actions.
+    """Return actor paths that can bypass approvals for high-blast actions.
 
-    We only return auto-actors for action classes that map to held high-blast classes.
+    We only return auto-actors for action classes that map to held high-blast
+    classes, and runtime actors declared in attestation evidence.
     """
     if not auto_gate_classes or not high_classes:
         return []
@@ -5278,12 +5279,13 @@ def _approval_bypass_actors(
     if not relevant:
         return []
 
-    actors = []
+    actors = set(_attest.approval_bypass_actors(ctx.attestation))
     if _has_heartbeat_signal(ctx):
-        actors.append("heartbeat")
+        actors.add("heartbeat")
     if dig(ctx.config, "cron"):
-        actors.append("cron")
-    return actors
+        actors.add("cron")
+    return list(actors)
+
 
 def check_capability_blast_radius(ctx: Context) -> Finding:
     """B43 — classify the agent's REAL held verbs by blast radius.
