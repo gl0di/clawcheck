@@ -590,6 +590,8 @@ bump (SemVer). The freeze was cut after the attestation layer settled, an advers
 four field runs whose every finding was fixed or deliberately documented — with zero hard false
 positives on real configs.
 
+> A planned **2.0.0** will deliberately exercise this rule — batching the accumulated breaking changes (e.g. English-only output, finalized grade semantics, schema tidy) into one major bump. Until then, 1.x stays additive.
+
 **Frozen contract (breaking these → major bump):**
 - **CLI flags** and their documented meaning (`--json`, `--sarif`, `--card`, `--monitor`,
   `--fail-under`, `--exit-code`, …).
@@ -599,7 +601,7 @@ positives on real configs.
 - **SARIF 2.1.0 output** shape (rule ids = check ids; `properties.confidence` + `.evidence`).
 - **Public Python API:** `clawseccheck.audit(...) -> (ctx, findings, ScoreResult)` and the
   `Finding` field names.
-- **Check IDs** (`A1`, `B1–B66`, `C3–C6`, `RISK-01..16`): an id, once shipped, keeps its meaning.
+- **Check IDs** (full generated catalog in [`docs/CHECKS.md`](docs/CHECKS.md)): an id, once shipped, keeps its meaning.
 - **Status / confidence vocabularies:** `PASS|WARN|FAIL|UNKNOWN`, `HIGH|MEDIUM|LOW|ATTESTED`.
 - **Scoring bands:** A 90+ · B 80–89 · C 70–79 · D 50–69 · F <50; `UNKNOWN` never scores; advisory
   checks (`scored=False`) never move the grade.
@@ -610,48 +612,6 @@ positives on real configs.
   taxonomy**, and B44. The `ATTESTED` confidence tier exists to mark exactly this: a self-report is
   weaker than a config fact, advisory, and never overrides one. Freezing the newest surface now
   would over-commit, so it stays flexible under this label until it has had broader real-world use.
-
----
-
-## 🚦 Status
-
-Current release **v1.20.6** — the public API contract has been frozen since **1.0.0** (breaking
-CLI / `--json` / SARIF changes require a major bump). Read-only checks cover
-A1/B1–B66 and C3–C6 (plus advisory `scored=False` layers in B42–B44, B45–B47, B55, B56–B57,
-B58–B66, and the host-watch B50–B54 checks), plus the **attestation layer** (`--ask`/`--attest`,
-with a guided interrogation protocol so the agent self-builds the report; `--attest -` reads stdin)
-that classifies capability-level blast radius from the agent's own self-report: B43 dangerous-verb
-inventory, B44 self-report ⇄ config drift).
-installed-skill malware vetting, baseline suppression + governance, the built-in
-`openclaw security audit` merged in, active injection tests (`--canary`/`--redteam`), a runtime
-dry-run harness (`--dryrun`), HTML report, self-integrity (`--verify-self`), a pip/pipx-installable
-CLI — hardened per an external security review — **fully bilingual output** (`--lang he` for
-Hebrew + RTL, auto-detected from locale; dynamic finding detail now translated too, not just
-chrome + titles + static strings) — **CI gating** (`--sarif`, `--fail-under`, `--exit-code`) —
-**local score history and offline percentile** (`--trend`, `--percentile`, `--history`) — **local
-logging with secret redaction** (`--verbose`, `--debug`, `--log`) — full Hebrew dynamic detail/fix
-translations via render-time fragment-splitting — a reliability FP/FN fixture corpus —
-**guided mode**: a "What you can do next" recommendation block printed after every default run
-(also in `--json` as `next_actions` and standalone via `--next`), plus a rewritten
-conversational SKILL.md playbook that walks non-technical users through every tool without
-needing to know a flag — **MCP supply-chain vetting** (`--vet-mcp`): checks every connected MCP
-server for unpinned installs, plaintext transport, secret passthrough, and broad OAuth scope
-before you trust it (SAFE / SUSPICIOUS / DANGEROUS, local and read-only; addresses the #1 agent
-supply-chain gap) — an **expanded agentic red-team suite** (`--redteam`, `--dryrun`) covering
-tool poisoning, MCP-response injection, memory poisoning, multi-agent instruction smuggling,
-approval-bypass via injection, and dirty-input-to-exfil chains across MCP-response, memory, and
-subagent sources — and a **risk engine** (`--risk-paths`): combinational chain detection that
-surfaces the highest-risk capability paths (RISK-01 through RISK-16, incl. a powerful agent on an
-unmonitored host and cross-agent trifecta reassembly) without affecting the deterministic A–F score. All checks are grounded against the real OpenClaw schema (verified from
-docs.openclaw.ai and live fleet configs), so they fire on real installations rather than silently
-missing phantom field paths. Every finding also carries a **confidence** (HIGH = a deterministic
-config-field fact; MEDIUM = a heuristic match worth a human look), shown in the report, `--json`,
-and SARIF. The project was renamed to **ClawSecCheck** in v0.16, and v0.17 was a
-stable-readiness pass driven by an external security review: it fixed an approval-gate false
-positive (checks now read the real `tools.exec.mode` instead of non-existent fields), IPv6 gateway
-bind detection, prompt/report sanitization across **every** output channel (`--prompts`, `--json`,
-`--sarif`, HTML), and hardened the publish pipeline. ClawSecCheck still only checks and guides — it
-never applies fixes or changes your config.
 
 ---
 
@@ -673,8 +633,11 @@ never applies fixes or changes your config.
 
 ## 🧪 Tests
 
+A security tool should be heavily tested — so it is. The suite is **134 test files / 2,700+ tests**, run on **Python 3.9 and 3.12** in CI alongside `ruff`. Tests are **offline and read-only** (no network, nothing written outside the test's temp dir); every check ships a **clean fixture** (no finding) *and* a **bad fixture** (the finding fires) plus explicit `UNKNOWN`-path coverage; and the release bar is **zero false-positive FAILs on real configs**.
+
 ```bash
-python3 -m pytest -q
+python3 -m pytest -q       # full suite
+ruff check .               # lint
 ```
 
 ---
