@@ -109,13 +109,27 @@ def test_risk02_lethal_trifecta_fires():
 
 
 def test_risk02_only_two_legs_no_trifecta():
+    # input via web tool + sensitive data, but no channels and no outbound tools
     cfg = {
-        "channels": {"telegram": {"dmPolicy": "open"}},
+        "tools": {"allow": ["web_search"]},
         "gateway": {"auth": {"password": "s3cr3t"}},
-        # no outbound
     }
     paths = _paths(cfg)
     assert not any(p.id == "RISK-02" for p in paths)
+
+
+def test_risk02_channels_count_as_outbound():
+    # channels are bidirectional — configured channel implies outbound capability
+    cfg = {
+        "channels": {"telegram": {"dmPolicy": "open"}},
+        "gateway": {"auth": {"password": "s3cr3t"}},
+        # no explicit outbound tools — outbound is implied by channel presence
+    }
+    paths = _paths(cfg)
+    assert any(p.id == "RISK-02" for p in paths)
+    r02 = next(p for p in paths if p.id == "RISK-02")
+    assert r02.severity == HIGH
+    assert len(r02.chain) == 3
 
 
 # ──────────────────────────────────────────────────────────────────────────────

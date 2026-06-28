@@ -299,6 +299,7 @@ def _trifecta_legs(ctx: Context) -> dict:
         "outbound actions": (
             _hint(tools, OUTBOUND_TOOL_HINTS)
             or bool(dig(cfg, "tools.elevated.allowFrom"))
+            or bool(_channels(cfg))  # channels are bidirectional: receive = can also reply
         ),
     }
 

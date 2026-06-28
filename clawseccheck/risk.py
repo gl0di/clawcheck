@@ -64,7 +64,12 @@ def _has_exec_or_write_tools(tools: list[str]) -> bool:
 
 
 def _has_outbound(tools: list[str], cfg: dict) -> bool:
-    return _hint(tools, OUTBOUND_TOOL_HINTS) or bool(dig(cfg, "tools.elevated.allowFrom"))
+    channels = cfg.get("channels")
+    return (
+        _hint(tools, OUTBOUND_TOOL_HINTS)
+        or bool(dig(cfg, "tools.elevated.allowFrom"))
+        or bool(isinstance(channels, dict) and channels)  # channels are bidirectional
+    )
 
 
 def _has_sensitive_data(tools: list[str], ctx: Context) -> bool:
