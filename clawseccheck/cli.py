@@ -68,6 +68,13 @@ def _emit(text: str) -> None:
         print(text.encode("ascii", "replace").decode("ascii"))
 
 
+# Vet-MCP icon / verdict constants — shared by the standalone --vet-mcp path
+# and the embedded vet-mcp section inside --full.
+_VET_ICON_ASCII: dict[str, str] = {"FAIL": "[X]", "WARN": "[!]", "PASS": "[OK]", "UNKNOWN": "[?]"}
+_VET_ICON_UNI: dict[str, str] = {"FAIL": "⛔", "WARN": "⚠️", "PASS": "✅", "UNKNOWN": "❔"}
+_VET_VERDICT: dict[str, str] = {"FAIL": "DANGEROUS", "WARN": "SUSPICIOUS", "PASS": "SAFE", "UNKNOWN": "UNKNOWN"}
+
+
 def vet_all(home_dir: Path, ascii_only: bool = False) -> int:
     """Vet every installed skill under home_dir/skills/.
 
@@ -351,12 +358,9 @@ def main(argv=None) -> int:
                 break
             if f.status == "WARN" and worst_status != "FAIL":
                 worst_status = "WARN"
-        _STATUS_ICON = {"FAIL": "[X]", "WARN": "[!]", "PASS": "[OK]", "UNKNOWN": "[?]"}
-        _STATUS_ICON_UNI = {"FAIL": "⛔", "WARN": "⚠️", "PASS": "✅", "UNKNOWN": "❔"}
-        _VERDICT = {"FAIL": "DANGEROUS", "WARN": "SUSPICIOUS", "PASS": "SAFE", "UNKNOWN": "UNKNOWN"}
         for f in findings:
-            icon = _STATUS_ICON[f.status] if ascii_only else _STATUS_ICON_UNI[f.status]
-            verdict = _VERDICT[f.status]
+            icon = _VET_ICON_ASCII[f.status] if ascii_only else _VET_ICON_UNI[f.status]
+            verdict = _VET_VERDICT[f.status]
             _emit(f"{icon} {verdict}: {_sanitize(f.title)}")
             if f.evidence:
                 for ev in f.evidence[:4]:
@@ -541,6 +545,7 @@ def main(argv=None) -> int:
 
     _emit(body)
 
+    vm_has_fail = False
     if args.full and not args.json and not args.card:
         # --- Self-test section (canary + red-team + dry-run) ---
         seed = args.seed if args.seed is not None else secrets.token_hex(8)
@@ -565,12 +570,10 @@ def main(argv=None) -> int:
             vm_icon = "[?]" if ascii_only else "❔"
             _emit(f"{vm_icon} {vmf.detail}")
         else:
-            _VM_ICON_A = {"FAIL": "[X]", "WARN": "[!]", "PASS": "[OK]", "UNKNOWN": "[?]"}
-            _VM_ICON_U = {"FAIL": "⛔", "WARN": "⚠️", "PASS": "✅", "UNKNOWN": "❔"}
-            _VM_VERDICT = {"FAIL": "DANGEROUS", "WARN": "SUSPICIOUS", "PASS": "SAFE", "UNKNOWN": "UNKNOWN"}
+            vm_has_fail = any(vmf.status == "FAIL" for vmf in vm_findings)
             for vmf in vm_findings:
-                vm_icon = _VM_ICON_A[vmf.status] if ascii_only else _VM_ICON_U[vmf.status]
-                vm_verdict = _VM_VERDICT[vmf.status]
+                vm_icon = _VET_ICON_ASCII[vmf.status] if ascii_only else _VET_ICON_UNI[vmf.status]
+                vm_verdict = _VET_VERDICT[vmf.status]
                 _emit(f"{vm_icon} {vm_verdict}: {_sanitize(vmf.title)}")
                 if vmf.evidence:
                     for vm_ev in vmf.evidence[:4]:
@@ -597,7 +600,7 @@ def main(argv=None) -> int:
             not getattr(f, "suppressed", False) and f.status == "FAIL"
             for f in findings
         )
-        if has_fail:
+        if has_fail or vm_has_fail:
             return 1
 
     return 0
