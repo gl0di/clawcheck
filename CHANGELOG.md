@@ -3,6 +3,24 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [1.30.0] — 2026-06-28
+
+Quality and coherence pass — self-review and live-verify follow-ups from the 1.29.0 release. Fail-safe fixes to the offline advisories, `--full --exit-code` now reflects MCP vetting, B55's Hebrew localization gap closed, and a leaner always-loaded `SKILL.md`. No change to the A–F grade, scoring, or findings.
+
+### Fixed
+- **Freshness advisory fail-safe** (`ledger.py`): a corrupted or blank `coverage.json` date used to be swallowed silently (`except: continue`), suppressing the staleness nudge entirely. It now falls back to the never-run advisory, and the date parse uses `date.fromisoformat`. Under `--full`, the self-test and vet-mcp freshness lines are suppressed (those capabilities are refreshed in the same run), fixing the report printing "never run" directly above the sections that run them.
+- **Coverage summary axes** (`SKILL.md` / `SKILL_HE.md`): the Dashboard coverage line appended "(of 13)" to all four counts, but only checked + partial are the 13 surfaces; roadmap and not-checkable are a separate gaps axis. The template now scopes "(of 13 surfaces)" correctly and renders the gaps on their own line.
+- **`--full --exit-code` now reflects vet-mcp** (`cli.py`): a DANGEROUS (FAIL) MCP server found by the embedded `--full` vet-mcp section was printed but ignored by `--exit-code` (exit 0). It now returns 1 on any vet-mcp FAIL, consistent with the standalone `--vet-mcp` path. FAIL-only, matching `--exit-code`'s main-audit semantics.
+- **B55 Hebrew localization** (`i18n.py`): the B55 WARN-branch fix string rendered as raw English under `--lang he`; added its Hebrew translation.
+
+### Changed
+- **Leaner `SKILL.md`**: the additional-flags reference and the maintainer release protocol moved out of the always-loaded playbook into `references/cli-flags.md` and `references/maintainers.md` (mirrored out of `SKILL_HE.md` with a pointer). The orchestrator carries only what it needs to run an audit.
+- **README**: removed the stale, hand-maintained Status section; expanded the Tests section into a real testing-rigor signal; replaced the drift-prone check-id range in the API-stability section with a link to the generated `docs/CHECKS.md` and noted the planned 2.0.0 contract break.
+
+### Internal
+- Deduped the vet-mcp status-icon/verdict tables into module-level constants (`cli.py`).
+- Added a coherence guard for the skill description across its SKILL.md/SKILL_HE.md copies (`tests/test_description_coherence.py`).
+
 ## [1.29.0] — 2026-06-28
 
 UX redesign release (pass 1 of 3): a Dashboard-style report organised by OpenClaw surface, an estimated grade projection, a coverage map of what is and isn't checked, a pre-scan menu, an offline freshness nudge, and a documented context-firewall pattern for isolated analysis of untrusted content. Presentation and additive JSON only — the A–F grade, score, and findings are unchanged, so this carries no false-positive risk.
