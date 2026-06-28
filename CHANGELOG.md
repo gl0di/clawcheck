@@ -3,6 +3,36 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [2.2.0] — 2026-06-28
+
+Recalibrate B2 gateway severity: `allowInsecureAuth` alone is now WARN
+(not FAIL), matching the OpenClaw doc that it does NOT bypass pairing.
+Also formally ships features built in v2.1.x: subagent context-firewall
+orchestration, freshness ledger, surface-family dashboard, and pre-scan
+mode menu (all already live in SKILL.md and engine).
+
+### Fixed
+- **B2 over-FAIL (I-007):** `gateway.controlUi.allowInsecureAuth=true`
+  alone now yields WARN instead of FAIL. Combined with any other B2
+  trigger (open channel policy, missing pairing auth, etc.) it still
+  produces FAIL. This corrects a score collapse from grade C(78) to
+  grade F(49) on the `coding_telegram_insecure` ClawRange fixture.
+
+### Added
+- **Context-firewall subagent** (SKILL.md): isolated session, no tools,
+  `maxSpawnDepth:1`, structured `{verdict,indicators[],risk_ids[]}` output
+  — opt-in with single-agent inline fallback (F-025).
+- **Freshness ledger** (`clawseccheck/ledger.py`): tracks last-run date
+  per opt-in capability (`self_test` 30 d, `vet_mcp` 14 d) in
+  `~/.clawseccheck/coverage.json`; stale nudge shown on next audit (F-026).
+- **`--full` flag**: runs audit + self-test + vet-mcp in one shot for
+  CI / non-interactive use (F-026).
+- **Surface-family dashboard** (`catalog.py`, `coverage.py`, SKILL.md):
+  13 OpenClaw surfaces mapped to 7 dashboard families; coverage map
+  shows Checked / Partial / Roadmap / Not-checkable states (F-027).
+- **Pre-scan mode menu** (SKILL.md): Quick / Deeper / Full / What-changed
+  with `go` shortcut; modifiers `private`, `vet`, `verify`, `update` (F-028).
+
 ## [2.1.0] — 2026-06-28
 
 Report UX overhaul: demote Trifecta from the headline, reorder CLI output

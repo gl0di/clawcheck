@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clawseccheck.catalog import FAIL
+from clawseccheck.catalog import FAIL, WARN
 from clawseccheck.checks import check_gateway
 from clawseccheck.collector import Context
 
@@ -28,12 +28,31 @@ _SAFE_GATEWAY = {
 def test_allow_insecure_auth_only_fix_is_actionable():
     cfg = {"gateway": dict(_SAFE_GATEWAY, controlUi={"allowInsecureAuth": True})}
     f = check_gateway(_ctx(cfg))
-    assert f.status == FAIL
+    assert f.status == WARN
     # The fix names the ONE thing that fired...
     assert "Disable gateway.controlUi.allowInsecureAuth" in f.fix
     # ...and does NOT drag in clauses for conditions that did not fire (already-satisfied).
     assert "tailscale" not in f.fix
     assert "loopback" not in f.fix
+
+
+def test_allow_insecure_auth_alone_is_warn():
+    """allowInsecureAuth alone (otherwise safe gateway) yields WARN, not FAIL."""
+    cfg = {"gateway": dict(_SAFE_GATEWAY, controlUi={"allowInsecureAuth": True})}
+    f = check_gateway(_ctx(cfg))
+    assert f.status == WARN
+
+
+def test_allow_insecure_auth_combined_with_open_channel_is_fail():
+    """allowInsecureAuth + open channel together escalate to FAIL."""
+    cfg = {
+        "gateway": dict(_SAFE_GATEWAY, controlUi={"allowInsecureAuth": True}),
+        "channels": {"telegram": {"dmPolicy": "open"}},
+    }
+    f = check_gateway(_ctx(cfg))
+    assert f.status == FAIL
+    assert "allowInsecureAuth" in f.fix
+    assert "allowlist" in f.fix
 
 
 def test_fix_lists_each_triggering_condition():

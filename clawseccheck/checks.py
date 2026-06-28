@@ -569,7 +569,9 @@ def check_gateway(ctx: Context) -> Finding:
     if open_ch:
         fixes.append("Set every open channel's dmPolicy/groupPolicy to 'allowlist'")
     if ev:
-        return _finding("B2", FAIL, "; ".join(ev), "; ".join(fixes), ev)
+        _insecure_auth_only = ev == ["gateway.controlUi.allowInsecureAuth enabled"]
+        sev = WARN if _insecure_auth_only else FAIL
+        return _finding("B2", sev, "; ".join(ev), "; ".join(fixes), ev)
     if not cfg:
         return _finding("B2", UNKNOWN, "No config loaded — cannot assess gateway.", "Run on the host with ~/.openclaw present.")
     return _finding("B2", PASS, "Gateway is loopback/authenticated and channels are not open.",

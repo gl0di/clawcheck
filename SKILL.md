@@ -1,6 +1,6 @@
 ---
 name: clawseccheck
-version: 2.1.0
+version: 2.2.0
 description: Free, local security self-audit for your own OpenClaw agent. Inspects your config read-only; audit history saved locally to ~/.clawseccheck/. Scores your setup (A–F), finds the most urgent holes, and gives copy-paste fixes. No API key, no data leaves your machine.
 license: MIT
 metadata: {"openclaw":{"emoji":"🔍","os":["darwin","linux","win32"],"user-invocable":true},"display_name":{"en":"ClawSecCheck — OpenClaw Security Self-Audit"},"display_description":{"en":"Free, local security self-audit for your own OpenClaw agent. Inspects your config read-only; audit history saved locally to ~/.clawseccheck/. Scores your setup (A–F), finds the most urgent holes, and gives copy-paste fixes. No API key, no data leaves your machine."},"tags":{"en":["security","openclaw","ai-agent","audit","prompt-injection","llm-security","self-audit","sarif"]}}
@@ -211,20 +211,26 @@ Present all seven sections below **in one message**, in order.
 
 When `trifecta == "3/3"`:
 ```
-🛡️ OpenClaw Security Audit — Grade {grade} · {score}/100
+🦞 OpenClaw Security Audit — Grade {grade} · {score}/100
 {score-bar}  ·  Lethal Trifecta 3/3 🔴  ·  {N} issues
 ```
 
-When trifecta is 2/3 or below:
+When `trifecta == "2/3"`:
 ```
-🛡️ OpenClaw Security Audit — Grade {grade} · {score}/100
+🦞 OpenClaw Security Audit — Grade {grade} · {score}/100
+{score-bar}  ·  Lethal Trifecta 2/3 🦞  ·  {N} issues
+```
+
+When trifecta is 1/3 or 0/3:
+```
+🦞 OpenClaw Security Audit — Grade {grade} · {score}/100
 {score-bar}  ·  {N} issues
 ```
 
 - Score-bar: 16 cells; `filled = round(score / 100 * 16)`. Use `█` for filled, `░` for empty.
   Score 49 example: `████████░░░░░░░░`.
-- Trifecta chip: only shown on line 2 when `trifecta == "3/3"` — append `· Lethal Trifecta 3/3 🔴`.
-  At 2/3 or below, omit it from line 2 entirely (the A1 finding covers it in the findings list).
+- Trifecta chip: shown on line 2 at 3/3 (🔴 — all three legs active) and at 2/3 (🦞 — one step
+  away; still dangerous). At 1/3 or 0/3, omit it from line 2 (the A1 finding covers it if present).
 - Issue count: non-suppressed findings with `status` `FAIL` or `WARN`.
 
 **Section 2 — FIX FIRST + projection**
