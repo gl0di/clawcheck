@@ -106,7 +106,7 @@ def record_run(capability: str, *, home: str | None = None,
 
 
 def freshness_notice(ledger: dict[str, str], *, today: date | None = None,
-                     lang: str = "en") -> list[str]:
+                     lang: str = "en", skip: tuple[str, ...] = ()) -> list[str]:
     """Return advisory lines when a capability is stale or has never been run.
 
     Returns an empty list if all capabilities are within their thresholds.
@@ -123,6 +123,10 @@ def freshness_notice(ledger: dict[str, str], *, today: date | None = None,
         Override the current date (for testing).  ``None`` → ``date.today()``.
     lang:
         Output language (``"en"`` or ``"he"``).
+    skip:
+        Capability keys to omit from the advisory — used when the caller is
+        refreshing those capabilities in the same run (e.g. ``--full``), so a
+        stale/never nudge for them would be self-contradictory.
     """
     from .i18n import t  # avoid top-level import cycle
 
@@ -130,6 +134,11 @@ def freshness_notice(ledger: dict[str, str], *, today: date | None = None,
     lines: list[str] = []
 
     for cap in THRESHOLDS:
+        if cap in skip:
+            # Caller is refreshing this capability in the same run (e.g. --full
+            # runs the self-test + vet-mcp sections), so a staleness nudge for it
+            # would contradict itself — suppress it.
+            continue
         threshold = THRESHOLDS[cap]
         last = ledger.get(cap)
 
@@ -138,10 +147,13 @@ def freshness_notice(ledger: dict[str, str], *, today: date | None = None,
             lines.append(t(f"freshness.{cap}_never", lang, threshold=threshold))
         else:
             try:
-                y, m, d = last.strip()[:10].split("-")
-                last_date = date(int(y), int(m), int(d))
+                last_date = date.fromisoformat(str(last).strip()[:10])
             except (ValueError, TypeError):
-                continue  # unparseable date → skip silently
+                # Corrupted/blank ledger entry → fail SAFE: treat it as never-run
+                # so the advisory still nudges, rather than silently swallowing it
+                # (fails-open is exactly what this tool warns others about).
+                lines.append(t(f"freshness.{cap}_never", lang, threshold=threshold))
+                continue
             age = (today - last_date).days
             if age > threshold:
                 lines.append(

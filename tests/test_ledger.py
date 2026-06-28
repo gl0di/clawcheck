@@ -183,12 +183,37 @@ def test_freshness_notice_never_run_vet_mcp_only():
     assert "--vet-mcp" in lines[0]
 
 
-def test_freshness_notice_unparseable_date_skipped_silently():
-    """A corrupted date entry should be silently ignored, not raise."""
-    ledger = {"self_test": "not-a-date", "vet_mcp": "2026-06-27"}
+def test_freshness_notice_unparseable_date_fires_never():
+    """A corrupted date entry must FAIL SAFE → never-run advisory, not silent skip.
+
+    Regression for the fails-quiet bug: a malformed coverage.json entry used to
+    swallow both the stale and never lines, silencing the security nudge.
+    """
+    ledger = {"self_test": "not-a-date", "vet_mcp": TODAY.isoformat()}
     lines = freshness_notice(ledger, today=TODAY)
-    # vet_mcp is fresh, self_test unparseable → skip; result should be empty
-    assert lines == []
+    # vet_mcp is fresh → silent; self_test corrupted → treated as never-run.
+    assert len(lines) == 1
+    assert "--self-test" in lines[0]
+    assert "never" in lines[0].lower()
+
+
+def test_freshness_notice_blank_date_fires_never():
+    """An empty-string ledger entry must also fail safe to never-run, not silent."""
+    ledger = {"self_test": "", "vet_mcp": TODAY.isoformat()}
+    lines = freshness_notice(ledger, today=TODAY)
+    assert len(lines) == 1
+    assert "--self-test" in lines[0]
+    assert "never" in lines[0].lower()
+
+
+def test_freshness_notice_skip_suppresses_capability():
+    """skip= omits the named capabilities (e.g. --full refreshes them this run)."""
+    # Empty ledger → both would normally fire 'never'; skip both → nothing.
+    assert freshness_notice({}, today=TODAY, skip=("self_test", "vet_mcp")) == []
+    # Skip only self_test → just the vet_mcp never line remains.
+    lines = freshness_notice({}, today=TODAY, skip=("self_test",))
+    assert len(lines) == 1
+    assert "--vet-mcp" in lines[0]
 
 
 def test_freshness_notice_offline_marker_in_output():
@@ -309,6 +334,15 @@ def test_cli_fresh_ledger_no_notice(tmp_path, monkeypatch, capsys):
         encoding="utf-8",
     )
     main(BASE)
+    out = capsys.readouterr().out
+    assert "Coverage gap" not in out
+
+
+def test_cli_full_suppresses_freshness_notice(tmp_path, monkeypatch, capsys):
+    """--full runs the self-test + vet-mcp sections this run, so it must NOT print
+    a 'never run' coverage-gap nudge for them (that would contradict itself)."""
+    monkeypatch.setenv("HOME", str(tmp_path))  # empty ledger → would fire if not skipped
+    main(BASE + ["--full", "--ascii"])
     out = capsys.readouterr().out
     assert "Coverage gap" not in out
 

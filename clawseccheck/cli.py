@@ -522,7 +522,12 @@ def main(argv=None) -> int:
         # Advisory only: never alters score, grade, or findings.
         f_notice: list[str] = []
         if not args.no_freshness_notice and not os.environ.get("CLAWSECCHECK_NO_FRESHNESS_NOTICE"):
-            f_notice = _compute_freshness(load_ledger(), lang=args.lang)
+            # Under --full the self-test + vet-mcp sections run later in this same
+            # invocation and refresh their ledger entries, so suppress their
+            # freshness lines here — otherwise the report prints "never run" directly
+            # above the sections that run them (the freshness is computed pre-run).
+            _refreshed = ("self_test", "vet_mcp") if args.full else ()
+            f_notice = _compute_freshness(load_ledger(), lang=args.lang, skip=_refreshed)
         parts = [render_report(findings, score, ascii_only, native=ctx.native, lang=args.lang,
                                risk=paths, update_notice=notice, freshness_notice=f_notice,
                                openclaw_detected=ctx.config_found, ctx=ctx),
