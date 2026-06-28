@@ -13,7 +13,6 @@ STRINGS: dict[str, str] = {
     'report.title': 'ClawSecCheck - OpenClaw Security Audit',
     'fix.header': 'Remediation (copy-paste)',
     'fix.note': 'ClawSecCheck does NOT apply these — review and run them yourself.',
-    'fix.config_label': 'config',
     'fix.none': 'Nothing to paste-apply — no current FAIL/WARN has a paste-ready fix.',
     'report.score_line': 'Score: {score}/100   Grade: {grade}   Lethal Trifecta: {trifecta}',
     'report.capped': '(capped from {raw} - open {sev} finding)',
