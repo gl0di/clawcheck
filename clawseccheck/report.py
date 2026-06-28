@@ -845,8 +845,6 @@ def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str
     badge_color = _GRADE_COLOR.get(score.grade, "#9f9f9f")
     trifecta = _trifecta_ratio(findings)
 
-    html_lang_attr = 'lang="en"'
-
     label_score = t("html.label_score")
     label_trifecta = t("html.label_trifecta")
     label_capped = t("html.label_capped")
@@ -893,7 +891,7 @@ def render_html(findings: list[Finding], score: ScoreResult, native=None) -> str
         capped_html = ""
 
     html_body = f'''<!doctype html>
-<html {html_lang_attr}>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
