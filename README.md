@@ -643,12 +643,14 @@ positives on real configs.
 
 ## 🧪 Tests
 
-A security tool should be heavily tested — so it is. The suite is **134 test files / 2,700+ tests**, run on **Python 3.9 and 3.12** in CI alongside `ruff`. Tests are **offline and read-only** (no network, nothing written outside the test's temp dir); every check ships a **clean fixture** (no finding) *and* a **bad fixture** (the finding fires) plus explicit `UNKNOWN`-path coverage; and the release bar is **zero false-positive FAILs on real configs**.
+A security tool should be heavily tested — so it is. The suite is **140+ test files / 2,400+ tests**, run on **Python 3.9 and 3.12** in CI alongside `ruff`. Tests are **offline and read-only** (no network, nothing written outside the test's temp dir); every check ships a **clean fixture** (no finding) *and* a **bad fixture** (the finding fires) plus explicit `UNKNOWN`-path coverage; and the release bar is **zero false-positive FAILs on real configs**.
 
 ```bash
 python3 -m pytest -q       # full suite
 ruff check .               # lint
 ```
+
+The test suite and fixtures live in the [GitHub repo](https://github.com/gl0di/clawseccheck) — they are not bundled in the installed skill package.
 
 ---
 
