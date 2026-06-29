@@ -38,6 +38,7 @@ actually holds via attestation, and flag the dangerous subset.
 ### Trigger
 
 For each attested agent:
+
 1. Agent holds MCP tools (tool name contains `__` — the `<server>__<verb>` pattern)
 2. At least one of those MCP tools has `classify_verb(tool)` in `HIGH_BLAST_CLASSES`
    (`"EXEC"`, `"MAILBOX_CONFIG"`, `"DESTRUCTIVE"`, `"EGRESS"`)
@@ -92,18 +93,21 @@ def check_mcp_bypass_highblast(ctx: Context) -> Finding:
 ## Fixtures
 
 ### `tests/fixtures/clean_b76/`
+
 - Config with `mcp.servers` configured
 - Attest: agents hold only low-blast MCP tools (e.g. `mcp__slack__list_channels`,
   `mcp__drive__get`, `mcp__files__read`)
 - Expected: PASS
 
 ### `tests/fixtures/bad_b76/`
+
 - Config with `mcp.servers` configured
 - Attest: agent holds high-blast MCP tools (e.g. `mcp__slack__send_message`,
   `mcp__files__bash`, `mcp__github__delete_forever`)
 - Expected: WARN, agent name + tools cited in evidence
 
 ### No attestation
+
 - `ctx.attestation = None`
 - Expected: UNKNOWN
 
