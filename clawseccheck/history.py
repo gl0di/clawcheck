@@ -1,8 +1,10 @@
 """Local score history for --trend: append-only JSONL, chmod 600, stdlib only.
 
-This module is the ONLY writer of history records. record() is never called
-automatically — only when an explicit caller (CLI --trend/--monitor) invokes it,
-preserving ClawSecCheck's "writes nothing by default" promise.
+This module is the ONLY writer of history records. record() runs by default on
+every audit — cli.py appends one score line unless --no-history is passed (--trend
+and --monitor have their own record call-sites). The file stays local and
+owner-only under ~/.clawseccheck/; nothing is ever uploaded. Opt out with
+--no-history.
 """
 from __future__ import annotations
 

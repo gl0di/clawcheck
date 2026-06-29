@@ -256,8 +256,10 @@ ClawSecCheck is **open source and zero-dependency (Python stdlib only)**. Its ow
   directories, and browser cookie stores **exist** near the agent home — contents never read The only thing it writes by default is a one-line
 entry to a **private, owner-only** local score history (`~/.clawseccheck/history.jsonl`) so you can
 track your grade over time — opt out with `--no-history`. Everything else is written only when you
-ask: a report file (`--save`), the `--monitor` snapshot (`~/.clawseccheck/state.json`), a badge
-(`--badge`), HTML/SARIF (`--html`/`--sarif`), or a log (`--log`).
+ask: a report file (`--save`), the `--monitor` snapshot and change journal
+(`~/.clawseccheck/state.json`, `events.jsonl`), a badge (`--badge`), HTML/SARIF (`--html`/`--sarif`),
+a log (`--log`), and a small freshness ledger (`~/.clawseccheck/coverage.json`) recording when you
+last ran an active self-test (`--canary`/`--redteam`/`--dryrun`/`--self-test`/`--vet-mcp`).
 
 The **only** external command it can run is your own, fixed and read-only:
 

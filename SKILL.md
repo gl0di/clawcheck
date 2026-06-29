@@ -42,8 +42,10 @@ It makes **no network calls**
 and **never modifies your OpenClaw setup** — *read-only* means it never touches `openclaw.json`, your
 skills, or your bootstrap files. The only things it writes stay **on your own machine and are never
 uploaded**: a private local audit history under `~/.clawseccheck/` (owner-only — opt out with
-`--no-history`) and any report files you explicitly request via a flag (`--save`, `--badge`, `--html`,
-`--sarif`, `--monitor`, `--trend`, `--log`). Pure Python standard library, no dependencies.
+`--no-history`), any report files you explicitly request via a flag (`--save`, `--badge`, `--html`,
+`--sarif`, `--monitor`, `--trend`, `--log`), and a small freshness ledger
+(`~/.clawseccheck/coverage.json`) recording when you last ran an opt-in active self-test
+(`--canary`/`--redteam`/`--dryrun`/`--self-test`/`--vet-mcp`). Pure Python standard library, no dependencies.
 
 It also runs OpenClaw's **built-in** audit — the one fixed, read-only external command
 `openclaw security audit --json` (never `--fix`) — and folds those findings into the same report.
@@ -509,7 +511,8 @@ Boundary: this is introspection only. **Never perform a side-effectful action to
 
 First, tell the user in plain language what will happen:
 > "I'll take a snapshot of your current setup. Next time I run, I'll tell you only what changed.
-> One small file (~/.clawseccheck/state.json) will be saved locally — nothing else."
+> A few small files under ~/.clawseccheck/ are written locally — the snapshot (state.json), a
+> change journal (events.jsonl), and one score-history line (history.jsonl). Nothing leaves your machine."
 
 Wait for the user to confirm. Only then run:
 
