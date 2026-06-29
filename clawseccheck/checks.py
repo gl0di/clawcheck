@@ -290,10 +290,6 @@ def _hint(names, hints) -> bool:
 _POWERFUL_PROFILES = frozenset({
     "coding", "code", "full", "dev", "developer", "admin", "power", "all", "max",
 })
-# Channel policy values meaning owner-only / closed — NOT an untrusted-input surface.
-_TRUSTED_CHANNEL_POLICIES = frozenset({
-    "owner", "owner-only", "owner_only", "none", "disabled", "off", "closed",
-})
 
 
 def _profile_is_powerful(profile) -> bool:
@@ -321,11 +317,14 @@ def _active_channels(cfg: dict) -> dict:
 def _untrusted_input_channels(cfg: dict) -> list[str]:
     """Enabled channels that can receive non-owner (untrusted) input.
 
-    Extends _external_input_channels (which keys purely off dmPolicy/groupPolicy
-    strings) with two real cases it misses: (1) a disabled channel ingests nothing;
-    (2) an enabled channel sitting in groups (a group bot) is reachable by untrusted
-    group members unless its group policy is explicitly owner-only — consistent with
-    B26's group-context model.
+    Same untrusted-policy allowlist as _external_input_channels (dmPolicy/groupPolicy
+    in _UNTRUSTED_INPUT_POLICIES = open/allowlist/paired), but additionally excludes
+    channels explicitly disabled (`enabled: False`) — a disabled channel ingests
+    nothing. An absent or restrictive groupPolicy (e.g. "ask" per-message approval,
+    or "owner") is deliberately NOT treated as untrusted, consistent with the leg
+    doctrine at _UNTRUSTED_INPUT_POLICIES: a groups-present denylist would FAIL a safe
+    owner-approved group bot ("ask") — a §5 false positive — so we key off the
+    untrusted-policy allowlist only.
     """
     out = []
     for name, c in _channels(cfg).items():
@@ -335,12 +334,8 @@ def _untrusted_input_channels(cfg: dict) -> list[str]:
         for node in nodes:
             if not isinstance(node, dict):
                 continue
-            dm = node.get("dmPolicy")
-            gp = node.get("groupPolicy")
-            if dm in _UNTRUSTED_INPUT_POLICIES or gp in _UNTRUSTED_INPUT_POLICIES:
-                out.append(name)
-                break
-            if node.get("groups") and gp not in _TRUSTED_CHANNEL_POLICIES:
+            if (node.get("dmPolicy") in _UNTRUSTED_INPUT_POLICIES
+                    or node.get("groupPolicy") in _UNTRUSTED_INPUT_POLICIES):
                 out.append(name)
                 break
     return out

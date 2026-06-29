@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from clawseccheck import audit, run_all
@@ -169,11 +171,28 @@ def test_a1_web_fetch_enabled_is_untrusted_input():
     assert "untrusted input" in (a1.evidence or [])
 
 
-def test_a1_enabled_group_bot_is_untrusted_input():
-    """D4: an enabled group bot (groups block, no owner-only policy) is untrusted input,
-    matching the rest of the engine's group-context model (B26)."""
-    a1 = _a1({"channels": {"telegram": {"groups": {"*": {"requireMention": True}}}}})
+def test_a1_open_group_bot_is_untrusted_input():
+    """D4: a group bot whose groupPolicy admits non-owner senders (open/allowlist/paired)
+    is untrusted input — the same allowlist the rest of the engine uses
+    (_UNTRUSTED_INPUT_POLICIES), not a groups-present denylist."""
+    a1 = _a1({"channels": {"telegram": {"groups": {"*": {"requireMention": True}},
+                                        "groupPolicy": "open"}}})
     assert "untrusted input" in (a1.evidence or [])
+
+
+def test_a1_approval_gated_group_bot_not_untrusted_input():
+    """§5 false-positive guard: an owner-approved group bot (groupPolicy="ask",
+    per-message approval) is NOT an untrusted-input surface — the untrusted group
+    sender cannot autonomously drive the agent. An earlier groups-present denylist
+    FAILed this safe config; "ask"/absent/owner group policies are excluded, matching
+    DM behaviour and the leg doctrine at _UNTRUSTED_INPUT_POLICIES."""
+    a1 = _a1({"channels": {"telegram": {"groups": {"*": {}}, "groupPolicy": "ask"}}})
+    assert "untrusted input" not in (a1.evidence or [])
+    # full vector: approval-gated group bot + a sensitive/db tool must NOT reach 3/3 FAIL
+    full = _a1({"channels": {"telegram": {"enabled": True, "groups": {"*": {}},
+                                          "groupPolicy": "ask"}},
+                "tools": {"allow": ["db_query"]}})
+    assert full.status != FAIL
 
 
 def test_a1_owner_only_group_bot_not_untrusted_input():
