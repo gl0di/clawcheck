@@ -147,3 +147,17 @@ def test_llm09_misinformation_has_no_checks():
         assert "LLM06" in owasp_for(cid), f"{cid} should map to LLM06 Excessive Agency"
     assert not any("LLM09" in codes for codes in OWASP_MAP.values()), \
         "LLM09 is out of scope — no check should map to it"
+
+
+# ---- orphan-check framework fills (coverage-map P3) ----
+def test_orphan_checks_now_framework_mapped():
+    # slam-dunk fills, each mirroring a named sibling in both maps
+    assert owasp_for("B74") == ("LLM01",) and ast_for("B74") == ("AST05",)   # cf. B64
+    assert owasp_for("B79") == ("LLM06",) and ast_for("B79") == ("AST03",)   # cf. B8
+    assert owasp_for("C014") == ("LLM02",) and ast_for("C014") == ()         # cf. B14
+    assert owasp_for("C015") == ("LLM02",) and ast_for("C015") == ()         # cf. B1
+    # AST-only fills (no clean LLM analog)
+    assert ast_for("B38") == ("AST06",) and owasp_for("B38") == ()           # SSRF, cf. B4
+    assert ast_for("C032") == ("AST06",)                                     # cf. B70
+    # backups/DR has no agentic-skill or LLM class -> intentionally unmapped in both
+    assert owasp_for("C3") == () and ast_for("C3") == ()

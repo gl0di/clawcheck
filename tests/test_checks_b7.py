@@ -49,6 +49,27 @@ def test_b7_unknown_when_backend_set_to_external_like_value():
     assert f.status == UNKNOWN
 
 
+# ---- inline _ctx paths for vector surface (complement fixture-based tests above) ----
+
+def test_b7_vectorstore_present_no_auth_no_readonly_unknown():
+    # has_vector_store=True but no auth/readOnly keys -> UNKNOWN
+    f = check_memory_poisoning(_ctx({"memory": {"vectorStore": {}}}))
+    assert f.status == UNKNOWN
+    assert "untrusted input" in f.detail
+
+
+def test_b7_vectorstore_with_auth_passes():
+    # vector surface + auth key present -> PASS
+    f = check_memory_poisoning(_ctx({"memory": {"vectorStore": {"auth": {"mode": "key"}}}}))
+    assert f.status == PASS
+
+
+def test_b7_vectorstore_with_readonly_passes():
+    # vector surface + readOnly key present -> PASS
+    f = check_memory_poisoning(_ctx({"memory": {"vectorStore": {"readOnly": True}}}))
+    assert f.status == PASS
+
+
 def test_b7_belongs_to_audit_set():
     from clawseccheck import audit
 

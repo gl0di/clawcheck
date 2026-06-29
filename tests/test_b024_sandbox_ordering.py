@@ -7,7 +7,7 @@ masking a container-escape-class signal.
 """
 from pathlib import Path
 
-from clawseccheck.catalog import FAIL, WARN
+from clawseccheck.catalog import FAIL, UNKNOWN, WARN
 from clawseccheck.checks import check_sandbox
 from clawseccheck.collector import Context
 
@@ -55,3 +55,11 @@ def test_mode_unset_exec_but_no_evidence_still_warns():
     f = check_sandbox(_ctx(cfg))
     assert f.status == WARN
     assert "mode not set" in f.detail
+
+
+# ---- UNKNOWN: no exec tools and no sandbox config ----
+
+def test_b04_no_exec_no_sandbox_config_unknown():
+    """Empty config has no exec tools and no sandbox settings -> UNKNOWN (not applicable)."""
+    f = check_sandbox(_ctx({}))
+    assert f.status == UNKNOWN

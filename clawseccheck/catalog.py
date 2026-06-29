@@ -501,11 +501,20 @@ AST_MAP = {
     "B53": ("AST09",),
     "B54": ("AST09",),
     "B57": ("AST02", "AST03"),
+    # Orphan-check fills (coverage-map P3): each mirrors a named sibling's AST class.
+    "B38": ("AST06",),   # headless browser without OS sandbox = Weak Isolation (cf. B4)
+    "B73": ("AST06",),   # mDNS full advertise on non-loopback exposes the agent (cf. B70)
+    "B74": ("AST05",),   # forged role/provenance = untrusted external instructions (cf. B64)
+    "B76": ("AST03",),   # MCP tool-inheritance bypass = over-privileged reach (cf. B75)
+    "B77": ("AST09",),   # config-write audit review = governance / audit-trail (cf. B10)
+    "B78": ("AST09",),   # config-integrity tamper detection = governance (cf. B10)
+    "B79": ("AST03",),   # approval_policy=never = over-autonomous agency (cf. B8)
+    "C032": ("AST06",),  # trusting spoofable forwarded headers = weak boundary (cf. B70)
 }
 
 # Each check mapped to the OWASP-LLM-2025 category/categories it addresses ON THE AGENT
 # surface. Only clear fits are tagged; checks with no clean LLM-Top-10 analog (host-watch
-# B50–B54, logging B10, monitoring B16, SSRF B38, backups C3) are intentionally left
+# B50–B54, logging B10, monitoring B16/B77/B78, SSRF B38, backups C3) are intentionally left
 # unmapped rather than stretched — their coverage is the agent-specific OWASP Agentic
 # (ASI) threat classes, documented in docs/THREAT_COVERAGE.md. LLM08 (vector/embedding)
 # and LLM09 (misinformation) have no agent-config surface here, so nothing maps to them.
@@ -577,6 +586,14 @@ OWASP_MAP = {
     "B72": ("LLM06",),
     "C074": ("LLM01",),
     "C047": ("LLM03",),
+    # Orphan-check fills (coverage-map P3): each mirrors a named sibling's LLM class.
+    # SSRF B38, backups C3 and monitoring B77/B78 stay unmapped (no clean LLM analog).
+    "B12": ("LLM02",),   # cloud-model use = data egress to a 3rd party (cf. B14)
+    "B74": ("LLM01",),   # forged role/provenance = prompt injection (cf. B64)
+    "B76": ("LLM06",),   # MCP tool-inheritance bypass = Excessive Agency (cf. B31)
+    "B79": ("LLM06",),   # approval_policy=never = Excessive Agency (cf. B8)
+    "C014": ("LLM02",),  # outbound-surface inventory = data-disclosure surface (cf. B14)
+    "C015": ("LLM02",),  # secrets-at-rest scan = Sensitive Info Disclosure (cf. B1)
 }
 
 

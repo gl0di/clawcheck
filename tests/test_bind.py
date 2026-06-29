@@ -6,7 +6,7 @@ loopback bind was wrongly flagged exposed). `parse_bind_host` fixes both.
 """
 from pathlib import Path
 
-from clawseccheck.checks import check_gateway, parse_bind_host
+from clawseccheck.checks import check_gateway, check_tls, parse_bind_host
 from clawseccheck.collector import Context
 
 
@@ -77,6 +77,51 @@ def test_gateway_bind_ipv4_any_still_exposed():
 def test_gateway_bind_ipv4_loopback_is_not_public():
     cfg = {"gateway": {"bind": "127.0.0.1:8765", "auth": {"mode": "none"}}}
     assert check_gateway(_ctx(cfg)).status == "PASS"
+
+
+# ---- B11: additional check_tls verdict paths ----
+
+def test_b11_loopback_bind_tight_perms_passes():
+    # loopback bind + tight perms (config_mode=0o600) -> no exposure, no loose perms -> PASS
+    cfg = {"gateway": {"bind": "127.0.0.1:9000"}}
+    ctx = _ctx(cfg)
+    ctx.config_mode = 0o600
+    assert check_tls(ctx).status == "PASS"
+
+
+def test_b11_no_bind_tight_perms_passes():
+    # empty bind resolves to "" which is in LOOPBACK -> PASS
+    ctx = _ctx({})
+    ctx.config_mode = 0o600
+    assert check_tls(ctx).status == "PASS"
+
+
+def test_b11_non_loopback_tls_enabled_passes():
+    # non-loopback bind but TLS enabled -> exposure risk mitigated -> PASS
+    cfg = {"gateway": {"bind": "0.0.0.0:9000", "tls": {"enabled": True}}}
+    ctx = _ctx(cfg)
+    ctx.config_mode = 0o600
+    assert check_tls(ctx).status == "PASS"
+
+
+def test_b11_explicit_non_loopback_no_tls_warns():
+    # simple non-loopback bind without TLS -> WARN (no tailscale or other mode involved)
+    cfg = {"gateway": {"bind": "0.0.0.0:9000"}}
+    ctx = _ctx(cfg)
+    ctx.config_mode = 0o600
+    f = check_tls(ctx)
+    assert f.status == "WARN"
+    assert "non-loopback" in f.detail
+
+
+def test_b11_loose_perms_loopback_bind_warns():
+    # loopback bind (no network exposure) but config file is group-readable -> WARN
+    cfg = {"gateway": {"bind": "127.0.0.1:9000"}}
+    ctx = _ctx(cfg)
+    ctx.config_mode = 0o644   # group-readable: 0o077 & 0o644 = 0o044 != 0 -> loose
+    f = check_tls(ctx)
+    assert f.status == "WARN"
+    assert "readable" in f.detail or "group" in f.detail or "perms" in f.detail or "openclaw.json" in f.detail
 
 
 # ---- B11: funnel mode does not suppress TLS warning ----

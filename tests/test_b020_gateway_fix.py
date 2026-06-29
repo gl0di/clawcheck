@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from clawseccheck.catalog import FAIL, WARN
+from clawseccheck.catalog import FAIL, UNKNOWN, WARN
 from clawseccheck.checks import check_gateway
 from clawseccheck.collector import Context
 
@@ -23,6 +23,11 @@ _SAFE_GATEWAY = {
     "bind": "127.0.0.1:8080",
     "auth": {"mode": "token", "token": "a-very-long-token-of-32-characters"},
 }
+
+
+# B2 returns UNKNOWN only when no config was loaded at all (empty dict).
+def test_b02_empty_config_unknown():
+    assert check_gateway(_ctx({})).status == UNKNOWN
 
 
 def test_allow_insecure_auth_only_fix_is_actionable():

@@ -170,7 +170,7 @@ Advisory checks are recorded for coverage but are not scored.
 - Framework: Local First
 - Scored: yes
 - Confidence: HIGH
-- OWASP: none
+- OWASP: LLM02 Sensitive Information Disclosure
 - What it checks: Local-first & model hygiene
 - Remediation:
   - none
@@ -824,7 +824,7 @@ Advisory checks are recorded for coverage but are not scored.
 - Framework: Prompt Injection / Provenance Forgery
 - Scored: yes
 - Confidence: HIGH
-- OWASP: none
+- OWASP: LLM01 Prompt Injection
 - What it checks: Forged role/system block or false-provenance attribution in content
 - Remediation:
   - none
@@ -848,7 +848,7 @@ Advisory checks are recorded for coverage but are not scored.
 - Framework: Least Privilege / MCP Tool Inheritance
 - Scored: yes
 - Confidence: ATTESTED
-- OWASP: none
+- OWASP: LLM06 Excessive Agency
 - What it checks: High-blast MCP tool-inheritance bypass (attested)
 - Remediation:
   - none
@@ -884,7 +884,7 @@ Advisory checks are recorded for coverage but are not scored.
 - Framework: Human Approval
 - Scored: no
 - Confidence: MEDIUM
-- OWASP: none
+- OWASP: LLM06 Excessive Agency
 - What it checks: Codex session approval-policy posture (approval=never)
 - Remediation:
   - none
@@ -958,7 +958,7 @@ Advisory checks are recorded for coverage but are not scored.
 - Framework: Egress Inventory
 - Scored: no
 - Confidence: HIGH
-- OWASP: none
+- OWASP: LLM02 Sensitive Information Disclosure
 - What it checks: Egress inventory (outbound-capable surface enumeration)
 - Remediation:
   - none
@@ -970,7 +970,7 @@ Advisory checks are recorded for coverage but are not scored.
 - Framework: Secrets / Filesystem
 - Scored: no
 - Confidence: MEDIUM
-- OWASP: none
+- OWASP: LLM02 Sensitive Information Disclosure
 - What it checks: Secrets-at-rest scan of the OpenClaw home
 - Remediation:
   - none
