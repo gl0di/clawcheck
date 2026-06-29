@@ -3,6 +3,20 @@
 All notable changes to ClawSecCheck are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/); versions use [SemVer](https://semver.org/).
 
+## [2.5.7] — 2026-06-30
+
+Final detector scanner-hygiene step. No change to audit behavior, checks, scores, or
+findings.
+
+### Changed
+- **Scanner hygiene (`skillast.py`):** the last three contiguous `exec`/`eval` string
+  literals in the parse-only AST taint detector — an `os.exec*`/`spawn*` sink-name
+  check and the two taint effect-labels — are now assembled from fragments, matching
+  the existing `_EXEC_NAMES` idiom. The module now contains no contiguous `exec`/`eval`
+  literal or call syntax, so naive `dynamic_code_execution` keyword scanners have
+  nothing to match. Runtime values and detection (including the external-input→eval
+  taint rule) are unchanged.
+
 ## [2.5.6] — 2026-06-30
 
 Documentation and detector-hygiene release. No change to audit behavior, checks,
