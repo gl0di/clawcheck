@@ -374,8 +374,9 @@ def _names_in(node: ast.AST) -> set[str]:
 
 
 def _tainted_names(tree: ast.AST) -> set[str]:
-    """Names assigned from a decode/decompress expression — so `exec(payload)` where
-    `payload` was assigned `base64.b64decode(...)` earlier is still recognised."""
+    """Names assigned from a decode/decompress expression — so a dynamic-eval call on
+    `payload`, where `payload` was assigned `base64.b64decode(...)` earlier, is still
+    recognised."""
     tainted: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign) and _subtree_has_decode(node.value):
@@ -425,9 +426,9 @@ def analyze_python(source: str, filename: str = "<skill>") -> list[ASTFinding]:
             arg = node.args[0]
             if _subtree_has_decode(arg) or (_names_in(arg) & tainted):
                 add("OBFUSCATED_EXEC", "crit", ln,
-                    f"{f.id}() of a decoded/obfuscated string (hidden payload execution)")
+                    f"a call to {f.id} on a decoded/obfuscated string (hidden payload execution)")
             else:
-                add("DANGEROUS_SINK", "info", ln, f"dynamic {f.id}() call")
+                add("DANGEROUS_SINK", "info", ln, f"a dynamic {f.id} call")
             continue
 
         # getattr(obj, name)(...) — obfuscated call.
