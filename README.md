@@ -295,7 +295,8 @@ Or run the bundled script directly (Linux/macOS):
 
 ```bash
 python3 audit.py                 # human report + shareable card
-python3 audit.py --menu          # the capability menu (what you can do)
+python3 audit.py --menu          # the Welcome menu (four common modes)
+python3 audit.py --functions     # the full capability palette (everything it can do)
 python3 audit.py --json          # machine-readable
 python3 audit.py --card          # just the badge
 python3 audit.py --ascii         # plain output (no unicode icons/box)

@@ -37,6 +37,7 @@ from .dryrun import make_scenarios, render_dryrun
 from .sarif import render_sarif
 from .history import DEFAULT_HISTORY, load as history_load, record as history_record, render_trend
 from .menu import compute_ages, render_menu
+from .palette import render_palette
 from .percentile import render_percentile
 from .logsafe import get_logger
 from .safeio import secure_write_text
@@ -166,6 +167,7 @@ def vet_all(home_dir: Path, ascii_only: bool = False) -> int:
 # kind "opt" → active when the value is not None; "bool" → active when truthy.
 _PRIMARY_MODES = [
     ("menu", "--menu", "bool"),
+    ("functions", "--functions", "bool"),
     ("verify_self", "--verify-self", "bool"),
     ("vet", "--vet", "opt"),
     ("vet_all", "--vet-all", "bool"),
@@ -254,6 +256,9 @@ def main(argv=None) -> int:
     p.add_argument("--home", default="~/.openclaw", help="OpenClaw home dir (default: ~/.openclaw)")
     p.add_argument("--json", action="store_true", help="machine-readable output")
     p.add_argument("--card", action="store_true", help="print only the shareable badge")
+    p.add_argument("--functions", action="store_true",
+                   help="print the full capability palette (everything the skill can do, "
+                        "as speakable prompts) and exit — Screen 12, reached from the menu")
     p.add_argument("--menu", action="store_true",
                    help="print the capability menu (the guided Welcome screen) and exit")
     p.add_argument("--ascii", action="store_true", help="ASCII-only output (no unicode icons/box)")
@@ -388,6 +393,13 @@ def main(argv=None) -> int:
         stale = bool(update_notice(__version__, released=__released__))
         _emit(render_menu(version=__version__, build_age_days=build_age,
                           last_check_days=last_days, stale=stale, ascii_only=ascii_only))
+        return 0
+
+    if args.functions:
+        # Screen 12 — the full capability palette (Welcome's "menu"/item 4 expands here).
+        # Read-only: no scan, no network, no writes — just the grounded capability list.
+        from .checks import CHECKS  # noqa: PLC0415
+        _emit(render_palette(n_checks=len(CHECKS), ascii_only=ascii_only))
         return 0
 
     if args.vet:

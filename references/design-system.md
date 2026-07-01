@@ -350,7 +350,7 @@ summary strip (Critical/High/Medium/Low counts) · Findings **grouped by the 7 f
   shared publicly — use `--badge`" notice; the warning is a normal flowing line (the old
   `.warning-box strong { display:block }` bug that split "must **NOT** be shared" is fixed).
 
-### 12. Menu / All functions — capability palette · "menu" / `?` / `[More…]`
+### 12. Menu / All functions — capability palette · "menu" / `?` / `[More…]` · `--functions`
 
 The discoverability backstop for Welcome. Welcome shows only 4 common modes; **this is the
 complete list** of what the skill can do, grouped by intent, so the user never has to know a
@@ -415,7 +415,15 @@ render the list as **text** and offer **category buttons** that re-emit a filter
 `[Scan] [Live tests ⚡] [Vet] [Track] [Share]`. Modifiers stay text. Degrades to the plain
 text list when `capabilities.inlineButtons` is off.
 
-**Decisions baked in:** *complete by construction* — the palette is the 21 `_PRIMARY_MODES` +
+**Decisions baked in:** *complete by construction* — the palette is the `_PRIMARY_MODES` set +
 defaults, nothing hidden; every verb is grounded to a real flag in parens (drift-guard, same
 spirit as `test_schema_grounding`); ⚡ vs ✅ reuses the Dashboard "Next" legend; niche CI/power
 flags are pointed to `help` rather than dumped, to keep the palette readable.
+
+**Implemented (F-045):** `clawseccheck/palette.py` holds the grounded registry (the single
+source of truth) and `render_palette()`; the CLI emits it with **`--functions`** (Screen 12,
+one level deeper than `--menu`'s Welcome). `tests/test_palette.py` enforces the drift-guard —
+every `_PRIMARY_MODES` flag is either present in the palette or listed in
+`palette.EXEMPT_FROM_PALETTE` (the container/internal flags `--menu`, `--functions`,
+`--dashboard-findings`) — so the palette can't fall behind `cli.py`. `--ascii` folds ⚡→`(live)`
+and drops emoji.
