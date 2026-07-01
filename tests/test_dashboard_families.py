@@ -26,8 +26,8 @@ def test_no_standalone_trifecta_headline():
 def test_trifecta_finding_lands_under_privilege_and_execution():
     a1 = _f("A1", FAIL, CRITICAL, evidence=["untrusted input", "sensitive data", "outbound actions"])
     out = render_report([a1], compute([a1]))
-    assert "[Privilege & Execution]" in out
-    idx_family = out.index("[Privilege & Execution]")
+    assert "│ Privilege & Execution" in out
+    idx_family = out.index("│ Privilege & Execution")
     idx_finding = out.index("title A1")
     assert idx_finding > idx_family
 
@@ -37,8 +37,8 @@ def test_findings_grouped_by_real_catalog_family():
     b1 = _f("B1", FAIL, CRITICAL)
     b2 = _f("B2", FAIL, CRITICAL)
     out = render_report([b1, b2], compute([b1, b2]))
-    exposure_idx = out.index("[Exposure & Network]")
-    secrets_idx = out.index("[Secrets & Data]")
+    exposure_idx = out.index("│ Exposure & Network")
+    secrets_idx = out.index("│ Secrets & Data")
     b1_title_idx = out.index("title B1")
     b2_title_idx = out.index("title B2")
     # Exposure & Network renders before Secrets & Data (fixed FAMILY_ORDER)
@@ -93,4 +93,17 @@ def test_unrecognized_id_falls_back_to_other_bucket_not_dropped():
 def test_family_header_says_clear_when_nothing_to_fix_in_that_family():
     p = _f("B3", PASS, HIGH)
     out = render_report([p], compute([p]))
-    assert "[Privilege & Execution] — clear" in out
+    assert "│ Privilege & Execution — clear" in out
+
+
+def test_ascii_only_keeps_bracket_format():
+    """ascii_only=True must produce the legacy [Family] - … bracket format, not the framed one."""
+    p = _f("B3", PASS, HIGH)
+    b2 = _f("B2", FAIL, CRITICAL)
+    out = render_report([p, b2], compute([p, b2]), ascii_only=True)
+    assert "[Exposure & Network]" in out
+    assert "[Privilege & Execution] - clear" in out
+    # framed chars must not appear in ascii output
+    assert "┌" not in out
+    assert "│ Exposure" not in out
+    assert "└" not in out

@@ -16,13 +16,15 @@ channels have **different rendering capabilities**, so there is **no single fixe
 skeleton**. Alignment-dependent box-drawing (closed boxes, columns) + "type 1-4" is a
 *terminal* assumption that breaks on Telegram.
 
-The `SKILL.md` Dashboard (Step 3) applies this everywhere **except** the family section
-headers, which use an **open 3-sided frame** (`┌─ / │ label / └─`, no right border) so the
-seven categories visibly stand apart. That single exception is deliberate (see Layer 2 and
-Component 3): with no right border there is nothing to align, so the frame renders as three
-short lines in a monospace surface (terminal, ControlUI) **and** degrades to harmless plain
-lines in a proportional one — and Telegram flattens the Dashboard through `delivery-mirror`
-regardless. Everything else stays emoji + indentation + markdown, **not** box-art.
+Both the `SKILL.md` Dashboard (Step 3) and the CLI text report (`render_report`) apply this
+everywhere **except** the family section headers, which use an **open 3-sided frame**
+(`┌─ / │ label / └─`, no right border) so the seven categories visibly stand apart. That
+single exception is deliberate (see Layer 2 and Component 3): with no right border there is
+nothing to align, so the frame renders as three short lines in a monospace surface (terminal,
+ControlUI) **and** degrades to harmless plain lines in a proportional one — and Telegram
+flattens the Dashboard through `delivery-mirror` regardless. The CLI text report uses the
+same frame in its default (non-ascii) profile and falls back to `[Family] — N to fix` brackets
+under `--ascii`. Everything else stays emoji + indentation + markdown, **not** box-art.
 
 ### Surface capability matrix
 
@@ -272,9 +274,10 @@ Next — ✅ read-only · ⚡ touches live agent (asks)
   so it visibly breaks; with no right border there is nothing to misalign, so the frame holds
   in monospace surfaces and degrades to three harmless lines elsewhere. This is the single
   box-art exception to the `text` baseline (Layer 2). The findings sit **below** the frame,
-  not inside it. The CLI text report (`render_report`) keeps its own `[Family] — N to fix`
-  header (it doubles as a per-family fix-count, and framing it would break
-  `test_dashboard_families`); framing the CLI header is a possible future follow-up.
+  not inside it. The CLI text report (`render_report`) **now also frames family headers** in
+  its non-ascii / `mono` profile (open 3-sided, no emoji, preserving the `— N to fix` /
+  `— clear` count) — consistent with the chat Dashboard. Under `--ascii`, `render_report`
+  degrades to the `[Family] — N to fix` bracket form.
 - **No Lethal Trifecta headline chip.** It moved from Section 1 (grade card) into Section 3
   as the A1 finding inside Privilege & Execution — a agent-behavior signal among its peers,
   not a separate "the one thing that matters" banner. The 3-legs plain-language explanation

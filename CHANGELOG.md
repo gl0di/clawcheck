@@ -27,12 +27,14 @@ information, far easier to scan.
 - **Finding cards:** each finding is a bordered card with a severity-tinted accent, a
   severity pill, and clearer `Why:`/`Fix:` typography, replacing the flat bordered rows.
   Report content, escaping, and the private-owner-view contract are unchanged.
-- **Framed Dashboard family headers:** the chat audit Dashboard (`SKILL.md` Step 3) now
-  draws each of the seven surface families inside an open 3-sided frame (`┌─ / │ label / └─`)
-  so the categories stand apart. The frame is open on the right so variable-width emoji can't
-  misalign it, and it degrades to plain lines off monospace. `references/design-system.md`
-  is updated to bless this as the one box-art exception to the `text` baseline and to
-  document the v2.8.0 HTML report (Component 11).
+- **Framed family headers (chat Dashboard + CLI text report):** both the conversational
+  Dashboard (`SKILL.md` Step 3) and the `--full` CLI text report (`render_report`) now draw
+  each of the seven surface families inside an open 3-sided frame (`┌─ / │ label / └─`) so the
+  categories stand apart. The frame is open on the right so variable-width emoji can't
+  misalign it, and it degrades to plain lines off monospace. Under `--ascii` the CLI report
+  keeps its `[Family] — N to fix` bracket form. `references/design-system.md` is updated to
+  bless this as the one box-art exception to the `text` baseline and to document the v2.8.0
+  HTML report (Component 11).
 
 ## [2.7.1] — 2026-06-30
 

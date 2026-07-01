@@ -544,7 +544,14 @@ def render_report(findings: list[Finding], score: ScoreResult,
             members.sort(key=lambda f: (_STATUS_ORDER.get(f.status, 9), _SEV_ORDER.get(f.severity, 9)))
             label = FAMILY_LABEL.get(fam_key, "Other")
             n_bad = sum(1 for f in members if f.status in (FAIL, WARN))
-            lines.append(f"[{label}] — {n_bad} to fix" if n_bad else f"[{label}] — clear")
+            count_text = f"{n_bad} to fix" if n_bad else "clear"
+            if ascii_only:
+                lines.append(f"[{label}] — {count_text}")
+            else:
+                _rule = "─" * 30
+                lines.append(f"┌{_rule}")
+                lines.append(f"│ {label} — {count_text}")
+                lines.append(f"└{_rule}")
             n_unknown = 0
             for f in members:
                 if f.status in (FAIL, WARN):
