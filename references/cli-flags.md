@@ -24,6 +24,11 @@ kept here so the always-loaded playbook stays lean.
   and B44 (self-report ⇄ config drift) at `ATTESTED` confidence. Read-only; introspection only.
 - `--watch-log` — print the Agent Watch event journal (a local timeline of what changed across
   `--monitor` runs); `--events PATH` points it at a different journal file.
+- `--dashboard-findings` — print ONLY the Section-3 Findings block for the chat Dashboard
+  (non-suppressed FAIL/WARN, high-confidence, grouped by the 7 families, already framed in the
+  open 3-sided box) and exit. Agent-facing: SKILL.md Step 3 runs this and pastes the output
+  verbatim, so the family frame is deterministic instead of model-drawn. `--ascii` degrades the
+  frame to `[Family] — N to fix` brackets.
 
 **Mode precedence.** Most flags above select a single mode; only one runs per invocation
 (resolved in a fixed order, `--json` winning over `--card` on the default report path). If you

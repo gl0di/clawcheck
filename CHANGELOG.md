@@ -10,6 +10,12 @@ coverage-by-area, with light/dark theming, a score bar, and a severity summary �
 information, far easier to scan.
 
 ### Added
+- **Deterministic chat-Dashboard frames (`--dashboard-findings`):** a new agent-facing flag
+  prints only the Section-3 Findings block (non-suppressed FAIL/WARN, high-confidence, grouped
+  by family, already framed). SKILL.md Step 3 now **pastes** this verbatim instead of
+  re-composing the findings — the host LLM was dropping the family frame when it composed the
+  block itself. The renderer (`report.py:render_dashboard_findings`) enforces the FAIL/WARN +
+  no-`MEDIUM`/`ATTESTED` filter in code; `--ascii` degrades to `[Family] — N to fix` brackets.
 - **Grouped HTML report:** findings are grouped by the seven OpenClaw surface families
   (Exposure & Network, Privilege & Execution, …), matching the conversational Dashboard,
   with a per-group jump nav and counts so dozens of findings stay navigable.

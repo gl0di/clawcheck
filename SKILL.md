@@ -291,69 +291,61 @@ If `projection.top1` is `null` (no fixable FAILs), skip this block and say "No h
 
 **Section 3 — Findings, grouped by area**
 
-Group all non-suppressed FAIL and WARN findings into the 7 OpenClaw surface families below — not a
-flat severity list (matches `--full`'s grouped text report, F-044). Render families in this fixed
-order; skip a family entirely if it has no FAIL/WARN findings (an empty "clear" header is useful in
-the raw CLI text report, but is noise in a chat Dashboard — omit it here). Within a family, most
-severe first: CRITICAL → HIGH → MEDIUM → LOW. Skip findings with no actionable result.
+**Do not compose this section — paste it.** Composing the findings yourself is exactly why
+the family frame breaks: models substitute their own markdown headers for the box. Instead run:
 
-**Pull findings with `confidence` = `"MEDIUM"` or `"ATTESTED"` out of this section** — they appear
-in Section 5 ("Worth a glance") instead.
+```
+python3 {baseDir}/audit.py --dashboard-findings
+```
+
+and paste its **entire stdout here, verbatim**. It emits the FAIL/WARN findings already grouped
+into the 7 OpenClaw surface families, each under an **open 3-sided frame**
+(`┌─ / │ {family} — {N} to fix / └─`, no right border), most-severe-first within a family, with
+the mandatory `why:` and `fix:` on every finding. Do **not** re-draw the frame, swap it for
+markdown bold, drop the rule lines, or re-order — paste exactly what the command prints.
+
+The command already guarantees the Section-3 contract, so **you filter nothing yourself**:
+- **PASS/UNKNOWN are dropped** — coverage is Section 4's job, not here;
+- **`MEDIUM`/`ATTESTED`-confidence findings are dropped** — they surface in Section 5 ("Worth a glance");
+- families with nothing to fix are **omitted** (no empty "— clear" headers);
+- the Lethal Trifecta (A1) is folded into **Privilege & Execution** as one finding (no standalone
+  headline, F-044), with its active legs named in the finding's own `why:` line.
+
+The 7 families, in the fixed order the command renders them:
 
 | Icon | Family | Surfaces |
 |------|--------|---------|
 | 🌐 | Exposure & Network | gateway · channels · sessions |
-| 🔑 | Privilege & Execution | tools · agents (**+ A1, the Lethal Trifecta — see below**) |
+| 🔑 | Privilege & Execution | tools · agents (**+ A1, the Lethal Trifecta**) |
 | 📦 | Supply Chain | skills · mcp |
 | 📝 | Content & Memory Integrity | bootstrap |
 | 🔒 | Secrets & Data | secrets |
 | 🛰️ | Detection & Host | monitoring · host |
 | 🔧 | Automation & Maintenance | hooks · update |
 
-**A1 (Lethal Trifecta) renders inside Privilege & Execution, not as its own headline (F-044)** — it's
-an agent-behavior finding like any other in that family. When A1 is FAIL with 2 or 3 legs active,
-give it a richer `why:` than usual: read `findings[id="A1"].evidence` to know which legs are active.
-The three legs are: **(1) untrusted input** — external channels/skills feed into the model;
-**(2) sensitive data** — secrets, memory, or credentials are in scope; **(3) outbound actions** —
-the agent can act online (web, MCP, exec).
-- 3/3: "All three Lethal Trifecta legs are active: your agent receives outside input, has access to sensitive data, and can act online. One injected prompt is enough to exfiltrate everything."
-- 2/3: "Two of three Lethal Trifecta legs are active: [name the two active legs]. If a third leg activates — even temporarily — the combination becomes immediately exploitable."
+Plain-language still governs **your own prose** around the pasted block (the Section-2 FIX FIRST
+line, any framing sentence) — never raw codes like "B2 FAIL". The block's `why:`/`fix:` lines are
+the tool's own plain-language text: leave them exactly as printed.
 
-For each finding: severity dot + severity label + plain-language title, then **mandatory** `why:`
-and `fix:` indented on the next lines.
-
-**`why:` and `fix:` are required for every single finding — never skip them.** One line each.
-`why:` = what an attacker can actually do, or what goes wrong. `fix:` = the concrete config change.
-Do NOT just restate the title. Do NOT omit these lines to save space.
-
-**Frame each family header** so the categories stand out as distinct sections. Draw a
-top rule, the emoji + family name on a `│`-prefixed line, then a bottom rule — an
-**open 3-sided box (no right border)**. Both rules are the same length (~30 `─`). Do
-**not** close the box on the right: emoji render at variable width, so a right border
-would visibly misalign — the open frame always lines up. The findings for that family go
-**below** its frame, not inside it.
+Example of what `--dashboard-findings` prints (paste the **real** output, not this sample):
 
 ```
-— Findings —
 ┌──────────────────────────────
-│ 🌐 Exposure & Network
+│ Exposure & Network — 1 to fix
 └──────────────────────────────
-🔴 CRITICAL  insecure control-UI auth
+⛔ [CRITICAL] insecure control-UI auth
     why: anyone on your local network can send commands to your agent right now — no pairing or auth required
     fix: set gateway.controlUi.allowInsecureAuth to false in openclaw.json
-🟡 MEDIUM  Telegram context too broad
-    why: every message in the channel feeds into the model — a malicious message can inject instructions or leak prior conversation
-    fix: set channels.telegram.contextVisibility to "allowlist" or "allowlist_quote"
 
 ┌──────────────────────────────
-│ 🔑 Privilege & Execution
+│ Privilege & Execution — 2 to fix
 └──────────────────────────────
-🔴 CRITICAL  Lethal Trifecta — all three legs active
-    why: All three Lethal Trifecta legs are active: your agent receives outside input, has access to sensitive data, and can act online. One injected prompt is enough to exfiltrate everything.
-    fix: Break the trifecta — remove one leg: lock channels to owner-only, gate outbound/exec behind approval, or move sensitive data out of reach.
-🟠 HIGH  tool profile broader than minimal
+⛔ [CRITICAL] Lethal Trifecta (untrusted input × sensitive data × outbound)
+    why: all three legs are active — outside input, sensitive data, and outbound actions; one injected prompt is enough to exfiltrate everything
+    fix: break the trifecta — remove one leg
+⚠️ [HIGH] tool profile broader than minimal
     why: the "coding" profile gives the agent filesystem write, shell, and package-install access — a hijacked agent can run arbitrary code
-    fix: change tools.profile to "minimal"; add only the tools you actually use
+    fix: change tools.profile to "minimal"
 ```
 
 **Section 4 — Coverage of OpenClaw surfaces**
@@ -366,6 +358,9 @@ Read `coverage.summary` and `coverage.gaps` from the JSON.
 ○ Roadmap {roadmap} · ⊘ Not-checkable {not_checkable}  (known gaps — separate axis, not part of the 13)
 ```
 
+Since the pasted Section 3 no longer tallies UNKNOWN, this coverage line is the single place
+unassessed surfaces are surfaced.
+
 For each partial surface (all findings returned UNKNOWN): if it's Privilege & Execution (B43/B44)
 and item 1 already ran the capability self-report in Step 2, it's likely already resolved — don't
 tell the user to run something that just ran. For any other still-partial surface, note that
@@ -374,6 +369,9 @@ entry in `coverage.gaps.not_checkable`: note it is out of static scope — OpenC
 control to audit there.
 
 **Section 5 — Worth a glance**
+
+`--dashboard-findings` already excludes `MEDIUM`/`ATTESTED` findings from Section 3, so this
+section is their only home — you don't need to pull them out of Section 3 yourself.
 
 If any findings have `confidence` = `"MEDIUM"` or `"ATTESTED"`:
 

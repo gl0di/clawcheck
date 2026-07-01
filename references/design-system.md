@@ -278,6 +278,12 @@ Next — ✅ read-only · ⚡ touches live agent (asks)
   its non-ascii / `mono` profile (open 3-sided, no emoji, preserving the `— N to fix` /
   `— clear` count) — consistent with the chat Dashboard. Under `--ascii`, `render_report`
   degrades to the `[Family] — N to fix` bracket form.
+- **Chat Section 3 is a *paste*, not model-composed (F-070).** Live testing showed the host LLM
+  ignores the frame instruction and substitutes markdown-bold headers when it composes Section 3
+  itself. So SKILL.md Step 3 now runs `audit.py --dashboard-findings`
+  (→ `report.py:render_dashboard_findings`) and pastes the output verbatim: the renderer emits only
+  non-suppressed FAIL/WARN, high-confidence findings, already framed — so the frame is
+  deterministic and the FAIL/WARN + no-`MEDIUM`/`ATTESTED` filter is enforced by code, not the model.
 - **No Lethal Trifecta headline chip.** It moved from Section 1 (grade card) into Section 3
   as the A1 finding inside Privilege & Execution — a agent-behavior signal among its peers,
   not a separate "the one thing that matters" banner. The 3-legs plain-language explanation
@@ -285,9 +291,10 @@ Next — ✅ read-only · ⚡ touches live agent (asks)
 - **"Show all findings"**, not just FAIL/WARN: the CLI text report (`render_report`) lists
   PASS as one-line confirmations per family and tallies UNKNOWN as a single count
   ("N not assessed — resolve via `--ask` then `--attest`") rather than enumerating each one
-  — proves coverage without a wall of near-identical "not assessed" lines. The chat Dashboard
-  stays FAIL/WARN-only in Section 3 (PASS/UNKNOWN already have their own sections — 4 and 6
-  — so duplicating them here would repeat content across the same message).
+  — proves coverage without a wall of near-identical "not assessed" lines. The chat Dashboard's
+  Section 3 (now a paste of `--dashboard-findings`, see above) is FAIL/WARN-only **and**
+  high-confidence-only — the renderer drops PASS/UNKNOWN (they own Sections 4/6) and
+  `MEDIUM`/`ATTESTED` (they own Section 5), so nothing is double-listed across the message.
 - **"deeper" is not a Section-3/7 pick anymore (F-043).** The capability self-report
   (B43/B44) runs automatically in Step 2 the first time item 1 is chosen, so by the time this
   screen renders those UNKNOWNs are usually already resolved — Section 4's coverage note only

@@ -15,6 +15,28 @@ def test_cli_card_returns_zero(capsys):
     assert "OpenClaw Security" in capsys.readouterr().out
 
 
+def test_cli_dashboard_findings_frames_and_slices(capsys):
+    """--dashboard-findings prints only the framed Section-3 block, not the whole report."""
+    rc = main(["--home", str(FIXTURES / "home_vuln"), "--no-native", "--no-history",
+               "--dashboard-findings"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "┌" in out and "│ Exposure & Network" in out and "└" in out
+    # it is the findings SLICE, not the full report
+    assert "Score:" not in out
+    assert "Scan receipt" not in out
+
+
+def test_cli_dashboard_findings_ascii_brackets(capsys):
+    """--dashboard-findings --ascii degrades the frame to [Family] brackets, no box-art."""
+    rc = main(["--home", str(FIXTURES / "home_vuln"), "--no-native", "--no-history",
+               "--ascii", "--dashboard-findings"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "[Exposure & Network]" in out
+    assert "┌" not in out and "⛔" not in out
+
+
 def test_cli_json_machine_readable(capsys):
     rc = main(["--home", str(FIXTURES / "home_safe"), "--no-native", "--no-history", "--json"])
     assert rc == 0
