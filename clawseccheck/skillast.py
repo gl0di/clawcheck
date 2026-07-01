@@ -282,6 +282,32 @@ def _call_args_tainted(node: ast.Call, tainted: set[str]) -> tuple:
     return any_tainted, direct
 
 
+def _subprocess_taint_is_command_injection(node: ast.Call, tainted: set) -> bool:
+    """For a subprocess.* call with tainted input, is it command-injection grade?
+
+    True  -> shell=True (or a non-literal shell value), OR a non-list first arg
+             (string command / tainted program path), OR the program element argv[0]
+             is itself tainted.
+    False -> argv-list form with shell not True and a fixed (untainted) program — the
+             tainted value is only a non-program argument. That is argument injection
+             (low risk: metacharacters are literal argv data passed to execve), NOT
+             command injection. Regression guard for the B13 false-positive class.
+    """
+    for kw in node.keywords:
+        if kw.arg == "shell":
+            v = kw.value
+            if isinstance(v, ast.Constant) and v.value is False:
+                break  # explicit shell=False -> fall through to the argv-form check
+            return True  # shell=True, or a dynamic value we cannot prove is False
+    first = node.args[0] if node.args else None
+    if isinstance(first, (ast.List, ast.Tuple)):
+        prog = first.elts[0] if first.elts else None
+        if prog is not None and (_names_in(prog) & tainted):
+            return True  # tainted program name -> arbitrary program execution
+        return False  # only a non-program argv element is tainted -> argument injection
+    return True  # string / name / concat first arg -> string command or program path
+
+
 def _file_read_tainted_names(tree: ast.AST) -> set[str]:
     """Names whose value derives from a file-read operation (for TT4 source)."""
     tainted: set[str] = set()
@@ -510,6 +536,16 @@ def analyze_python(source: str, filename: str = "<skill>") -> list[ASTFinding]:
             if is_exec:
                 any_t, direct = _call_args_tainted(node, ext_tainted)
                 if any_t:
+                    # A subprocess argv-list call (shell=False, fixed program) is only
+                    # argument injection, not command injection — do not escalate to crit.
+                    if exec_name.startswith("subprocess.") and not _subprocess_taint_is_command_injection(
+                        node, ext_tainted
+                    ):
+                        add("TT5_ARG_INJECTION", "info", ln,
+                            "external input flows into {sink} as a non-program list argument "
+                            "(shell=False) — argument injection, not command injection".format(
+                                sink=exec_name))
+                        continue
                     flow_kind = "direct" if direct else "indirect"
                     add("TT5_CMD_INJECTION", "crit", ln,
                         "external input flows into {sink} ({flow} flow) — command/code injection".format(

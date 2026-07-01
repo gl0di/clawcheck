@@ -320,6 +320,17 @@ def test_vet_clean_logonly_is_pass():
     assert f.status == PASS
 
 
+def test_vet_argv_listform_is_pass():
+    """B13 FP regression: argv list-form subprocess (shell=False) must not FAIL.
+
+    This is the smyx-payment class — a tainted value in a fixed-program argv list is
+    argument injection (info), so vet_skill must PASS, not CRITICAL-FAIL.
+    """
+    skill_dir = FIXTURES / "clean_taint_argv_listform" / "skills" / "argvskill"
+    f = vet_skill(skill_dir)
+    assert f.status == PASS
+
+
 # ---------------------------------------------------------------------------
 # analyze_python direct checks for info-severity fixtures
 # (TT4/SSRF are "info" — vet_skill only escalates them with cred_exfil_signal;
@@ -374,3 +385,67 @@ def test_fixture_clean_logonly_is_silent():
     assert "TT5_CMD_INJECTION" not in r
     assert "TT4_FILE_NET" not in r
     assert "TT_SSRF" not in r
+
+
+# ---------------------------------------------------------------------------
+# Shell-form awareness: list-argv subprocess with shell=False is argument
+# injection (info), NOT command injection (crit). Regression for the B13 FP
+# class (smyx-payment): subprocess.run([prog, ..., tainted]) is not injectable.
+# ---------------------------------------------------------------------------
+
+def test_tt5_listform_argv_shell_false_is_arg_injection_not_crit():
+    src = (
+        "import subprocess, sys\n"
+        "def handle(phone):\n"
+        "    subprocess.run([sys.executable, '-m', 'scripts.query', phone], shell=False)\n"
+    )
+    r = _rules(src)
+    assert "TT5_CMD_INJECTION" not in r
+    assert "TT5_ARG_INJECTION" in r
+    assert r["TT5_ARG_INJECTION"].severity == "info"
+
+
+def test_tt5_listform_argv_default_shell_is_arg_injection_not_crit():
+    src = (
+        "import subprocess, sys\n"
+        "def handle(phone):\n"
+        "    subprocess.run([sys.executable, '-m', 'q', phone])\n"
+    )
+    r = _rules(src)
+    assert "TT5_CMD_INJECTION" not in r
+    assert "TT5_ARG_INJECTION" in r
+
+
+def test_tt5_listform_tainted_program_stays_crit():
+    # Tainted value IS the program (list element 0) -> arbitrary exec -> crit.
+    src = (
+        "import subprocess\n"
+        "def handle(prog):\n"
+        "    subprocess.run([prog, '--flag'])\n"
+    )
+    r = _rules(src)
+    assert "TT5_CMD_INJECTION" in r
+    assert r["TT5_CMD_INJECTION"].severity == "crit"
+
+
+def test_tt5_listform_with_shell_true_stays_crit():
+    # shell=True ignores list safety: the shell interprets element 0 as a string.
+    src = (
+        "import subprocess, sys\n"
+        "def handle(phone):\n"
+        "    subprocess.run([sys.executable, phone], shell=True)\n"
+    )
+    r = _rules(src)
+    assert "TT5_CMD_INJECTION" in r
+    assert r["TT5_CMD_INJECTION"].severity == "crit"
+
+
+def test_tt5_string_command_shell_false_stays_crit():
+    # Non-list first arg with a tainted program path -> arbitrary program exec -> crit.
+    src = (
+        "import subprocess\n"
+        "def handle(prog):\n"
+        "    subprocess.run(prog)\n"
+    )
+    r = _rules(src)
+    assert "TT5_CMD_INJECTION" in r
